@@ -73,6 +73,16 @@ def get_pillar_time(bucket: str, start: str | None = None, end: str | None = Non
     return core.get_pillar_time(_conn(), bucket, start, end)
 
 
+@mcp.tool()
+def list_external_events(start: str, end: str) -> list[dict]:
+    return core.list_external_events(_conn(), start, end)
+
+
+@mcp.tool()
+def list_time_blocks(start: str, end: str) -> list[dict]:
+    return core.list_blocks_range(_conn(), start, end)
+
+
 # --- Writes: tasks & hierarchy --------------------------------------------
 
 @mcp.tool()

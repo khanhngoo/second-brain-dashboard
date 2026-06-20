@@ -76,6 +76,21 @@ export const handlers = [
     await record(request);
     return HttpResponse.json(sampleKanban.todo[0]);
   }),
+  http.post("/api/sessions", async ({ request }) => {
+    await record(request);
+    return HttpResponse.json({ id: 1 });
+  }),
+  http.get("/api/tasks", () => HttpResponse.json(sampleKanban.todo)),
+  http.get("/api/time_blocks", () => HttpResponse.json([])),
+  http.get("/api/external_events", () => HttpResponse.json([])),
+  http.get("/api/eisenhower", () =>
+    HttpResponse.json({
+      urgent_important: [],
+      not_urgent_important: sampleKanban.todo,
+      urgent_not_important: [],
+      not_urgent_not_important: [],
+    })
+  ),
 ];
 
 export const server = setupServer(...handlers);

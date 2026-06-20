@@ -163,6 +163,16 @@ def pillar_time(bucket: str, start: str | None = None, end: str | None = None):
     return core.get_pillar_time(_conn(), bucket, start, end)
 
 
+@app.get("/external_events")
+def external_events(start: str, end: str):
+    return core.list_external_events(_conn(), start, end)
+
+
+@app.get("/time_blocks")
+def time_blocks(start: str, end: str):
+    return core.list_blocks_range(_conn(), start, end)
+
+
 # --- Writes ---------------------------------------------------------------
 
 @app.post("/tasks")

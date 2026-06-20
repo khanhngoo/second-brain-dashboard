@@ -136,3 +136,20 @@ def list_blocks_on(conn: sqlite3.Connection, date: str) -> list[dict]:
             (date,),
         ).fetchall()
     )
+
+
+def list_blocks_range(conn: sqlite3.Connection, start: str, end: str) -> list[dict]:
+    """Time blocks overlapping [start, end): start_at < end AND end_at > start.
+
+    Feeds the calendar grid (day/week view).
+    """
+    return rows_to_dicts(
+        conn.execute(
+            """
+            SELECT * FROM time_blocks
+            WHERE start_at < ? AND end_at > ?
+            ORDER BY start_at
+            """,
+            (end, start),
+        ).fetchall()
+    )

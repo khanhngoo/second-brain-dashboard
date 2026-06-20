@@ -15,8 +15,10 @@ from .blocks import (
     move_time_block,
     run_autolog_sweep,
 )
+from .blocks import list_blocks_range
 from .boards import get_eisenhower, get_kanban
 from .brief import get_today_brief
+from .events import list_external_events, upsert_external_events
 from .milestones import create_milestone, list_milestones, update_milestone
 from .pillars import get_pillar, get_pillars
 from .rawquery import query
@@ -41,6 +43,8 @@ __all__ = [
     "get_kanban",
     "get_eisenhower",
     "get_pillar_time",
+    "list_external_events",
+    "list_blocks_range",
     # writes — tasks & hierarchy
     "create_task",
     "update_task",
@@ -60,6 +64,7 @@ __all__ = [
     "confirm_blocks",
     "mark_block_skipped",
     "run_autolog_sweep",
+    "upsert_external_events",
     # escape hatch
     "query",
 ]
