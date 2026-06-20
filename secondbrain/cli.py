@@ -40,5 +40,24 @@ def brief(date: str | None = typer.Option(None, help="ISO date; default today.")
     typer.echo(json.dumps(data, indent=2))
 
 
+@app.command()
+def sweep() -> None:
+    """Run the auto-log sweep (flip past-due planned blocks → done + log sessions)."""
+    result = core.run_autolog_sweep(get_conn())
+    typer.echo(json.dumps(result))
+
+
+@app.command()
+def serve(
+    host: str = typer.Option("127.0.0.1", help="Bind host."),
+    port: int = typer.Option(8000, help="Bind port."),
+    reload: bool = typer.Option(False, "--reload/--no-reload", help="Auto-reload on code change."),
+) -> None:
+    """Run the HTTP API (the dashboard's backend)."""
+    import uvicorn
+
+    uvicorn.run("secondbrain.api.app:app", host=host, port=port, reload=reload)
+
+
 if __name__ == "__main__":
     app()

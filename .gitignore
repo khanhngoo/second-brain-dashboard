@@ -7,3 +7,10 @@ dist/
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
+
+# frontend
+web/node_modules/
+web/dist/
+web/.vite/
+node_modules/
+web/tsconfig.tsbuildinfo

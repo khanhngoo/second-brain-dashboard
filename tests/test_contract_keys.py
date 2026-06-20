@@ -1,0 +1,64 @@
+"""Contract-drift guard: route JSON key-sets must match the hand-written TS types
+in web/src/api/types.ts. If the backend adds/removes a field, this fails and the
+TS type must be updated in lockstep (the frontend's only contract).
+"""
+
+import pytest
+
+from secondbrain import core
+from secondbrain.seed import seed_pillars
+
+TASK_KEYS = {
+    "id", "pillar_id", "milestone_id", "title", "description", "status",
+    "is_urgent", "is_important", "estimated_duration_min", "timer_mode",
+    "due_date", "note_ref", "sort_order", "created_at", "completed_at",
+}
+BRIEF_KEYS = {
+    "date", "blocks", "external_events", "due_today", "overdue",
+    "in_progress", "unconfirmed_blocks", "week_pillar_minutes",
+}
+PILLAR_ROLLUP_KEYS = {
+    "id", "slug", "name", "description", "color", "sort_order", "created_at",
+    "active_milestones", "open_tasks", "minutes_this_week",
+}
+KANBAN_KEYS = {"todo", "doing", "done"}
+EISENHOWER_KEYS = {
+    "urgent_important", "not_urgent_important",
+    "urgent_not_important", "not_urgent_not_important",
+}
+PILLAR_TIME_KEYS = {"pillar_id", "slug", "name", "bucket", "minutes"}
+
+
+@pytest.fixture
+def populated(db):
+    seed_pillars(db)
+    m = core.create_milestone(db, pillar="cracked_engineer", title="M")
+    t = core.create_task(db, pillar="cracked_engineer", title="t", milestone=m["id"])
+    core.log_session(db, t["id"], 40, started_at="2026-06-20T08:00:00+00:00")
+    return db
+
+
+def test_today_brief_keys(populated):
+    assert set(core.get_today_brief(populated).keys()) == BRIEF_KEYS
+
+
+def test_task_keys(populated):
+    rows = core.list_tasks(populated)
+    assert set(rows[0].keys()) == TASK_KEYS
+
+
+def test_pillar_rollup_keys(populated):
+    assert set(core.get_pillars(populated)[0].keys()) == PILLAR_ROLLUP_KEYS
+
+
+def test_kanban_keys(populated):
+    assert set(core.get_kanban(populated).keys()) == KANBAN_KEYS
+
+
+def test_eisenhower_keys(populated):
+    assert set(core.get_eisenhower(populated).keys()) == EISENHOWER_KEYS
+
+
+def test_pillar_time_keys(populated):
+    rows = core.get_pillar_time(populated, "week")
+    assert set(rows[0].keys()) == PILLAR_TIME_KEYS
