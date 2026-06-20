@@ -12,9 +12,11 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   createTimeBlock,
   deleteTimeBlock,
+  getCalendarStatus,
   listExternalEvents,
   listTimeBlocks,
   listTasks,
+  syncCalendar,
 } from "../api/client";
 import { keys, useInvalidateAll } from "../hooks/queries";
 import { Timer } from "../components/Timer";
@@ -76,6 +78,12 @@ export function CalendarView() {
     queryFn: () => listTasks({ status: "todo" }),
   });
 
+  const { data: calStatus } = useQuery({
+    queryKey: keys.calendarStatus(),
+    queryFn: getCalendarStatus,
+  });
+  const sync = useMutation({ mutationFn: syncCalendar, onSuccess: invalidate });
+
   const create = useMutation({
     mutationFn: ({ taskId, hour }: { taskId: number; hour: number }) => {
       const s = `${date}T${String(hour).padStart(2, "0")}:00:00`;
@@ -100,6 +108,16 @@ export function CalendarView() {
   return (
     <div>
       <h2 className="view-title">Calendar — {date}</h2>
+      <div className="block-row" style={{ marginBottom: "0.75rem" }}>
+        <span className="muted">
+          {calStatus?.enabled
+            ? `Calendar connected: ${calStatus.accounts.map((a) => a.account_email).join(", ")}`
+            : "No calendar connected (run `sb calendar connect`). Blocks stay local."}
+        </span>
+        <button className="btn" disabled={!calStatus?.enabled} onClick={() => sync.mutate()}>
+          {sync.isPending ? "Syncing…" : "Sync now"}
+        </button>
+      </div>
       <DndContext sensors={sensors} onDragEnd={onDragEnd}>
         <div className="cal-layout">
           <aside>

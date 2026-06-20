@@ -18,6 +18,12 @@ from .blocks import (
 from .blocks import list_blocks_range
 from .boards import get_eisenhower, get_kanban
 from .brief import get_today_brief
+from .calendar_accounts import (
+    add_calendar_account,
+    list_calendar_accounts,
+    remove_calendar_account,
+)
+from .calsync import calendar_status, flush_calendar_outbox, run_calendar_sync
 from .events import list_external_events, upsert_external_events
 from .milestones import create_milestone, list_milestones, update_milestone
 from .pillars import get_pillar, get_pillars
@@ -65,6 +71,13 @@ __all__ = [
     "mark_block_skipped",
     "run_autolog_sweep",
     "upsert_external_events",
+    # calendar (P3)
+    "calendar_status",
+    "run_calendar_sync",
+    "flush_calendar_outbox",
+    "add_calendar_account",
+    "list_calendar_accounts",
+    "remove_calendar_account",
     # escape hatch
     "query",
 ]

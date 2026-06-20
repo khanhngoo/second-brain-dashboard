@@ -9,6 +9,7 @@ soft-voids that session (voided=1) so skipped work never inflates pillar time.
 
 from __future__ import annotations
 
+import json
 import sqlite3
 
 from .. import clock
@@ -21,17 +22,36 @@ def _block(conn: sqlite3.Connection, block_id: int) -> dict:
     return row_to_dict(conn.execute("SELECT * FROM time_blocks WHERE id = ?", (block_id,)).fetchone())
 
 
+def _resolve_provider(provider):
+    """Return the provider to use: an explicit one (tests) or the registry."""
+    if provider is not None:
+        return provider
+    from ..calendar import get_provider, provider_enabled
+    return get_provider() if provider_enabled() else None
+
+
+def _enqueue(conn: sqlite3.Connection, op: str, block_id: int | None, payload: dict) -> None:
+    conn.execute(
+        "INSERT INTO calendar_outbox (op, block_id, payload, attempts, created_at) VALUES (?, ?, ?, 0, ?)",
+        (op, block_id, json.dumps(payload), clock.now_utc_iso()),
+    )
+
+
 def _duration_min(start_at: str, end_at: str) -> int:
     start = clock.parse_iso(start_at)
     end = clock.parse_iso(end_at)
     return max(0, round((end - start).total_seconds() / 60))
 
 
-def create_time_block(conn: sqlite3.Connection, task_id: int, start_at: str, end_at: str) -> dict:
-    require_task(conn, task_id)
+def create_time_block(
+    conn: sqlite3.Connection, task_id: int, start_at: str, end_at: str, *, provider=None
+) -> dict:
+    task = require_task(conn, task_id)
     if clock.parse_iso(end_at) <= clock.parse_iso(start_at):
         raise ValidationError("end_at must be after start_at")
     now = clock.now_utc_iso()
+    # Local row first — the source of truth (docs/05). It persists regardless of
+    # whether the calendar push succeeds.
     with conn:
         cur = conn.execute(
             """
@@ -41,10 +61,30 @@ def create_time_block(conn: sqlite3.Connection, task_id: int, start_at: str, end
             """,
             (task_id, start_at, end_at, now),
         )
-    return _block(conn, cur.lastrowid)
+    block_id = cur.lastrowid
+
+    p = _resolve_provider(provider)
+    if p is not None:
+        try:
+            from ..calendar.base import OWNED_TITLE_PREFIX
+            event_id = p.push_event(
+                title=OWNED_TITLE_PREFIX + task["title"], start_at=start_at, end_at=end_at
+            )
+            with conn:
+                conn.execute(
+                    "UPDATE time_blocks SET calendar_provider = 'google', calendar_event_id = ? WHERE id = ?",
+                    (event_id, block_id),
+                )
+        except Exception:
+            with conn:
+                _enqueue(conn, "create", block_id,
+                         {"title": task["title"], "start_at": start_at, "end_at": end_at})
+    return _block(conn, block_id)
 
 
-def move_time_block(conn: sqlite3.Connection, id: int, start_at: str, end_at: str) -> dict:
+def move_time_block(
+    conn: sqlite3.Connection, id: int, start_at: str, end_at: str, *, provider=None
+) -> dict:
     require_block(conn, id)
     if clock.parse_iso(end_at) <= clock.parse_iso(start_at):
         raise ValidationError("end_at must be after start_at")
@@ -53,17 +93,37 @@ def move_time_block(conn: sqlite3.Connection, id: int, start_at: str, end_at: st
             "UPDATE time_blocks SET start_at = ?, end_at = ? WHERE id = ?",
             (start_at, end_at, id),
         )
-    return _block(conn, id)
+    block = _block(conn, id)
+
+    p = _resolve_provider(provider)
+    if p is not None and block["calendar_event_id"]:
+        try:
+            p.update_event(block["calendar_event_id"], start_at=start_at, end_at=end_at)
+        except Exception:
+            with conn:
+                _enqueue(conn, "update", id,
+                         {"calendar_event_id": block["calendar_event_id"],
+                          "start_at": start_at, "end_at": end_at})
+    return block
 
 
-def delete_time_block(conn: sqlite3.Connection, id: int) -> dict:
+def delete_time_block(conn: sqlite3.Connection, id: int, *, provider=None) -> dict:
     """Hard-delete a block. Any auto-logged session keeps its minutes
     (sessions.block_id is SET NULL by the FK)."""
     block = _block(conn, id)
     if block is None:
         require_block(conn, id)  # raises NotFoundError
+    event_id = block["calendar_event_id"]
     with conn:
         conn.execute("DELETE FROM time_blocks WHERE id = ?", (id,))
+
+    p = _resolve_provider(provider)
+    if p is not None and event_id:
+        try:
+            p.delete_event(event_id)
+        except Exception:
+            with conn:
+                _enqueue(conn, "delete", id, {"calendar_event_id": event_id})
     return {"deleted": True, "id": id}
 
 

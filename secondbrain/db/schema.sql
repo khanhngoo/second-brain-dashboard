@@ -6,7 +6,7 @@
 --   * sessions.voided         -- soft-void for skipped auto-logs (reversibility)
 --   * time_blocks.confirmed   -- morning-brief confirm state
 
-PRAGMA user_version = 1;
+PRAGMA user_version = 2;
 
 -- ---------------------------------------------------------------------------
 -- pillars  (the five fixed life pillars; rows are extensible, seed exactly 5)
@@ -139,6 +139,20 @@ CREATE TABLE IF NOT EXISTS timers (
     mode       TEXT NOT NULL,        -- pomodoro / manual
     started_at TEXT NOT NULL,
     est_min    INTEGER
+);
+
+-- ---------------------------------------------------------------------------
+-- calendar_outbox  [P3]  (retry queue for calendar pushes)
+-- The local time_block is the source of truth and persists regardless; a failed
+-- push is enqueued here and drained on the next sync tick (eventually consistent).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS calendar_outbox (
+    id         INTEGER PRIMARY KEY,
+    op         TEXT NOT NULL,        -- create / update / delete
+    block_id   INTEGER,             -- the local time_block (may be gone for delete)
+    payload    TEXT,                -- JSON: title/start_at/end_at/calendar_event_id
+    attempts   INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
 );
 
 -- ---------------------------------------------------------------------------

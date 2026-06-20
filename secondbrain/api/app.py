@@ -256,3 +256,36 @@ def mark_block_skipped(id: int):
 @app.post("/query")
 def query(body: QueryBody):
     return core.query(body.sql, config.db_path())
+
+
+# --- Calendar (P3) --------------------------------------------------------
+
+class SyncBody(BaseModel):
+    start: str | None = None
+    end: str | None = None
+
+
+@app.get("/calendar/status")
+def calendar_status():
+    return core.calendar_status(_conn())
+
+
+@app.post("/calendar/sync")
+def calendar_sync(body: SyncBody):
+    from datetime import timedelta
+    from .. import clock
+
+    # Default to a one-week window around today if no range is given.
+    start = body.start or (clock.now_utc() - timedelta(days=1)).isoformat()
+    end = body.end or (clock.now_utc() + timedelta(days=7)).isoformat()
+    return core.run_calendar_sync(_conn(), start, end)
+
+
+@app.post("/calendar/connect")
+def calendar_connect():
+    # The OAuth consent flow opens a browser and must run from the CLI
+    # (`sb calendar connect`), not a headless API process.
+    return JSONResponse(
+        status_code=400,
+        content={"error": "Run `sb calendar connect` to authorize a Google account."},
+    )

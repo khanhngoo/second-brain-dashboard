@@ -202,6 +202,18 @@ def query(sql: str) -> dict:
     return core.query(sql, config.db_path())
 
 
+# --- Calendar (P3) --------------------------------------------------------
+
+@mcp.tool()
+def calendar_status() -> dict:
+    return core.calendar_status(_conn())
+
+
+@mcp.tool()
+def calendar_sync(start: str, end: str) -> dict:
+    return core.run_calendar_sync(_conn(), start, end)
+
+
 def main() -> None:
     mcp.run()
 

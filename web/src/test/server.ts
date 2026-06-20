@@ -83,6 +83,9 @@ export const handlers = [
   http.get("/api/tasks", () => HttpResponse.json(sampleKanban.todo)),
   http.get("/api/time_blocks", () => HttpResponse.json([])),
   http.get("/api/external_events", () => HttpResponse.json([])),
+  http.get("/api/calendar/status", () =>
+    HttpResponse.json({ enabled: false, accounts: [] })
+  ),
   http.get("/api/eisenhower", () =>
     HttpResponse.json({
       urgent_important: [],
