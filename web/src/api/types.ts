@@ -5,8 +5,8 @@
 
 export type TaskStatus = "todo" | "doing" | "done" | "archived";
 export type MilestoneStatus = "active" | "done" | "archived";
-export type SessionSource = "block" | "pomodoro" | "manual";
-export type TimerMode = "pomodoro" | "manual";
+export type SessionSource = "block" | "pomodoro" | "manual" | "adhd";
+export type TimerMode = "pomodoro" | "manual" | "adhd";
 export type BlockStatus = "planned" | "done" | "skipped";
 
 export interface Pillar {
@@ -56,6 +56,28 @@ export interface Task {
   sort_order: number;
   created_at: string;
   completed_at: string | null;
+}
+
+export interface ArchivedTask {
+  id: number;
+  pillar_id: number;
+  pillar_slug: string;
+  pillar_name: string;
+  pillar_color: string | null;
+  milestone_id: number | null;
+  milestone_title: string | null;
+  title: string;
+  description: string | null;
+  status: "done";
+  is_urgent: number;
+  is_important: number;
+  estimated_duration_min: number | null;
+  actual_duration_min: number;
+  due_date: string | null;
+  note_ref: string | null;
+  sort_order: number;
+  created_at: string;
+  completed_at: string;
 }
 
 export interface Subtask {

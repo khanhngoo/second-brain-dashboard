@@ -89,7 +89,7 @@ def stop_timer(conn: sqlite3.Connection, task_id: int, mark_done: bool = False) 
     started = clock.parse_iso(timer["started_at"])
     ended = clock.now_utc()
     duration_min = max(0, round((ended - started).total_seconds() / 60))
-    source = "pomodoro" if timer["mode"] == "pomodoro" else "manual"
+    source = timer["mode"] if timer["mode"] in ("pomodoro", "adhd") else "manual"
 
     with conn:
         conn.execute("DELETE FROM timers WHERE task_id = ?", (task_id,))

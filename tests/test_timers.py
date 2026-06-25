@@ -34,6 +34,14 @@ def test_pomodoro_source(seeded_db, frozen_clock):
     assert res["session"]["source"] == "pomodoro"
 
 
+def test_adhd_source(seeded_db, frozen_clock):
+    t = core.create_task(seeded_db, pillar="body_temple", title="t", timer_mode="adhd")
+    core.start_timer(seeded_db, t["id"])
+    frozen_clock.set("2026-06-20T09:15:00+00:00")
+    res = core.stop_timer(seeded_db, t["id"])
+    assert res["session"]["source"] == "adhd"
+
+
 def test_one_timer_per_task(seeded_db, frozen_clock):
     t = core.create_task(seeded_db, pillar="body_temple", title="t")
     core.start_timer(seeded_db, t["id"], mode="manual")

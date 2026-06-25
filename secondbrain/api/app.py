@@ -143,6 +143,15 @@ def tasks(
     return core.list_tasks(_conn(), pillar, milestone, status, quadrant, due_before, limit)
 
 
+@app.get("/archive/tasks")
+def archive_tasks(
+    pillar: str | None = None,
+    completed_from: str | None = None,
+    completed_to: str | None = None,
+):
+    return core.list_archived_tasks(_conn(), pillar, completed_from, completed_to)
+
+
 @app.get("/tasks/{id}")
 def task(id: int):
     return core.get_task(_conn(), id)

@@ -1,5 +1,5 @@
-// The pillar switcher: filters Kanban / Eisenhower / Analytics / Milestones to
-// one pillar slug or "all". Today is always cross-pillar (ignores this).
+// The pillar switcher filters Eisenhower / Calendar / Analytics / Milestones
+// to one pillar slug or "all".
 
 import { createContext, useContext, useState, type ReactNode } from "react";
 

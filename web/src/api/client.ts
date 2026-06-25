@@ -2,6 +2,7 @@
 // to the backend (docs/07): no SQL, no DB. Mirrors secondbrain/api/app.py.
 
 import type {
+  ArchivedTask,
   Bucket,
   CalendarStatus,
   Eisenhower,
@@ -75,6 +76,12 @@ export const listTasks = (params: {
   due_before?: string;
   limit?: number;
 } = {}) => request<Task[]>(`/tasks${qs(params)}`);
+
+export const listArchivedTasks = (params: {
+  pillar?: string;
+  completed_from?: string;
+  completed_to?: string;
+} = {}) => request<ArchivedTask[]>(`/archive/tasks${qs(params)}`);
 
 export const getTask = (id: number) => request<TaskDetail>(`/tasks/${id}`);
 

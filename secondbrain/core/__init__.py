@@ -33,6 +33,7 @@ from .subtasks import add_subtask, toggle_subtask
 from .tasks import (
     create_task,
     get_task,
+    list_archived_tasks,
     list_tasks,
     set_task_status,
     update_task,
@@ -45,6 +46,7 @@ __all__ = [
     "get_pillar",
     "list_milestones",
     "list_tasks",
+    "list_archived_tasks",
     "get_task",
     "get_kanban",
     "get_eisenhower",

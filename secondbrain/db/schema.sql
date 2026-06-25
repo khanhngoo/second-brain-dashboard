@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     is_urgent              INTEGER NOT NULL DEFAULT 0,
     is_important           INTEGER NOT NULL DEFAULT 0,
     estimated_duration_min INTEGER,
-    timer_mode             TEXT,           -- pomodoro / manual
+    timer_mode             TEXT,           -- pomodoro / manual / adhd
     due_date               TEXT,
     note_ref               TEXT,           -- link to an Obsidian note (docs/06)
     sort_order             INTEGER NOT NULL DEFAULT 0,
@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS subtasks (
 CREATE TABLE IF NOT EXISTS sessions (
     id           INTEGER PRIMARY KEY,
     task_id      INTEGER NOT NULL REFERENCES tasks(id) ON DELETE RESTRICT,
-    source       TEXT NOT NULL DEFAULT 'manual',   -- block / pomodoro / manual
+    source       TEXT NOT NULL DEFAULT 'manual',   -- block / pomodoro / manual / adhd
     started_at   TEXT,
     ended_at     TEXT,
     duration_min INTEGER NOT NULL,

@@ -13,6 +13,8 @@ export const keys = {
   kanban: (pillar?: string) => ["kanban", pillar ?? "all"] as const,
   eisenhower: (pillar?: string) => ["eisenhower", pillar ?? "all"] as const,
   pillarTime: (bucket: Bucket) => ["pillar_time", bucket] as const,
+  archivedTasks: (pillar?: string, completedFrom?: string, completedTo?: string) =>
+    ["archived_tasks", pillar ?? "all", completedFrom ?? "", completedTo ?? ""] as const,
   task: (id: number) => ["task", id] as const,
   timeBlocks: (start: string, end: string) => ["time_blocks", start, end] as const,
   externalEvents: (start: string, end: string) => ["external_events", start, end] as const,
@@ -39,6 +41,16 @@ export const useEisenhower = (pillar?: string) =>
 
 export const usePillarTime = (bucket: Bucket) =>
   useQuery({ queryKey: keys.pillarTime(bucket), queryFn: () => api.getPillarTime(bucket) });
+
+export const useArchivedTasks = (params: {
+  pillar?: string;
+  completed_from?: string;
+  completed_to?: string;
+} = {}) =>
+  useQuery({
+    queryKey: keys.archivedTasks(params.pillar, params.completed_from, params.completed_to),
+    queryFn: () => api.listArchivedTasks(params),
+  });
 
 export const useTask = (id: number, enabled = true) =>
   useQuery({ queryKey: keys.task(id), queryFn: () => api.getTask(id), enabled });

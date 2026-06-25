@@ -4,7 +4,9 @@ import {
   useTodayBrief,
 } from "../hooks/queries";
 import { TaskCard } from "../components/TaskCard";
+import { Pencil } from "lucide-react";
 import type { TimeBlock } from "../api/types";
+import { useBlockDrawer } from "../state/blockDrawer";
 
 function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -14,6 +16,7 @@ export function TodayView() {
   const { data: brief, isLoading, isError } = useTodayBrief();
   const confirm = useConfirmBlocks();
   const skip = useSkipBlock();
+  const { openBlockDrawer } = useBlockDrawer();
 
   if (isLoading) return <p className="muted">Loading today…</p>;
   if (isError || !brief) return <p className="muted">Could not load the brief.</p>;
@@ -44,6 +47,14 @@ export function TodayView() {
               </span>
               <span className="btn-row">
                 <button
+                  className="mini-icon"
+                  type="button"
+                  aria-label={`Edit block ${b.id}`}
+                  onClick={() => openBlockDrawer({ block: b, title: `Block #${b.id}` })}
+                >
+                  <Pencil size={13} />
+                </button>
+                <button
                   className="btn"
                   onClick={() => confirm.mutate(b.end_at.slice(0, 10))}
                 >
@@ -68,8 +79,18 @@ export function TodayView() {
               brief.blocks.map((b) => (
                 <div className="block-row" key={b.id}>
                   <span>Block #{b.id}</span>
-                  <span className="muted">
-                    {fmtTime(b.start_at)}–{fmtTime(b.end_at)} · {b.status}
+                  <span className="btn-row">
+                    <span className="muted">
+                      {fmtTime(b.start_at)}–{fmtTime(b.end_at)} · {b.status}
+                    </span>
+                    <button
+                      className="mini-icon"
+                      type="button"
+                      aria-label={`Edit block ${b.id}`}
+                      onClick={() => openBlockDrawer({ block: b, title: `Block #${b.id}` })}
+                    >
+                      <Pencil size={13} />
+                    </button>
                   </span>
                 </div>
               ))

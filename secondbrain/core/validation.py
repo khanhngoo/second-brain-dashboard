@@ -14,8 +14,8 @@ from ..errors import NotFoundError, ValidationError
 # Enum vocabularies (docs/02, docs/03).
 TASK_STATUSES = ("todo", "doing", "done", "archived")
 MILESTONE_STATUSES = ("active", "done", "archived")
-SESSION_SOURCES = ("block", "pomodoro", "manual")
-TIMER_MODES = ("pomodoro", "manual")
+SESSION_SOURCES = ("block", "pomodoro", "manual", "adhd")
+TIMER_MODES = ("pomodoro", "manual", "adhd")
 BLOCK_STATUSES = ("planned", "done", "skipped")
 QUADRANTS = ("urgent_important", "not_urgent_important",
              "urgent_not_important", "not_urgent_not_important")

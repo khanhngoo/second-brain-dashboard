@@ -1,6 +1,6 @@
 import { setupServer } from "msw/node";
 import { http, HttpResponse } from "msw";
-import type { TodayBrief, Kanban, PillarRollup } from "../api/types";
+import type { ArchivedTask, TodayBrief, Kanban, PillarRollup } from "../api/types";
 
 export const sampleBrief: TodayBrief = {
   date: "2026-06-20",
@@ -47,6 +47,51 @@ export const sampleKanban: Kanban = {
   done: [],
 };
 
+export const sampleArchivedTasks: ArchivedTask[] = [
+  {
+    id: 5,
+    pillar_id: 4,
+    pillar_slug: "cracked_engineer",
+    pillar_name: "Cracked Engineer",
+    pillar_color: "#0984E3",
+    milestone_id: 2,
+    milestone_title: "Ship dashboard",
+    title: "archive finished work",
+    description: "Build an archive table",
+    status: "done",
+    is_urgent: 0,
+    is_important: 1,
+    estimated_duration_min: 30,
+    actual_duration_min: 75,
+    due_date: "2026-06-22",
+    note_ref: null,
+    sort_order: 0,
+    created_at: "2026-06-20T00:00:00+00:00",
+    completed_at: "2026-06-22T10:00:00+00:00",
+  },
+  {
+    id: 6,
+    pillar_id: 4,
+    pillar_slug: "cracked_engineer",
+    pillar_name: "Cracked Engineer",
+    pillar_color: "#0984E3",
+    milestone_id: null,
+    milestone_title: null,
+    title: "short cleanup",
+    description: null,
+    status: "done",
+    is_urgent: 0,
+    is_important: 0,
+    estimated_duration_min: null,
+    actual_duration_min: 15,
+    due_date: null,
+    note_ref: "notes/cleanup.md",
+    sort_order: 1,
+    created_at: "2026-06-20T00:00:00+00:00",
+    completed_at: "2026-06-21T10:00:00+00:00",
+  },
+];
+
 // Captures requests so tests can assert what the client sent.
 export const captured: { url: string; method: string; body: unknown }[] = [];
 
@@ -81,7 +126,17 @@ export const handlers = [
     return HttpResponse.json({ id: 1 });
   }),
   http.get("/api/tasks", () => HttpResponse.json(sampleKanban.todo)),
+  http.get("/api/archive/tasks", () => HttpResponse.json(sampleArchivedTasks)),
+  http.get("/api/tasks/:id", () => HttpResponse.json({ ...sampleKanban.todo[0], subtasks: [], sessions_total_min: 0, blocks: [] })),
   http.get("/api/time_blocks", () => HttpResponse.json([])),
+  http.patch("/api/time_blocks/:id", async ({ request, params }) => {
+    await record(request);
+    return HttpResponse.json({
+      ...sampleBrief.unconfirmed_blocks[0],
+      id: Number(params.id),
+      ...(await request.clone().json() as Record<string, unknown>),
+    });
+  }),
   http.get("/api/external_events", () => HttpResponse.json([])),
   http.get("/api/calendar/status", () =>
     HttpResponse.json({ enabled: false, accounts: [] })

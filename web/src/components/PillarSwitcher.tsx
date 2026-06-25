@@ -8,7 +8,7 @@ export function PillarSwitcher() {
   return (
     <div className="pillar-switcher">
       <button
-        className={pillar === ALL ? "pill active" : "pill"}
+        className={pillar === ALL ? "filter-tab active" : "filter-tab"}
         onClick={() => setPillar(ALL)}
       >
         All
@@ -16,7 +16,7 @@ export function PillarSwitcher() {
       {pillars?.map((p) => (
         <button
           key={p.slug}
-          className={pillar === p.slug ? "pill active" : "pill"}
+          className={pillar === p.slug ? "filter-tab active" : "filter-tab"}
           style={{ borderColor: p.color ?? undefined }}
           onClick={() => setPillar(p.slug)}
         >

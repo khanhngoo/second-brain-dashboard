@@ -13,6 +13,13 @@ TASK_KEYS = {
     "is_urgent", "is_important", "estimated_duration_min", "timer_mode",
     "due_date", "note_ref", "sort_order", "created_at", "completed_at",
 }
+ARCHIVED_TASK_KEYS = {
+    "id", "pillar_id", "pillar_slug", "pillar_name", "pillar_color",
+    "milestone_id", "milestone_title", "title", "description", "status",
+    "is_urgent", "is_important", "estimated_duration_min",
+    "actual_duration_min", "due_date", "note_ref", "sort_order",
+    "created_at", "completed_at",
+}
 BRIEF_KEYS = {
     "date", "blocks", "external_events", "due_today", "overdue",
     "in_progress", "unconfirmed_blocks", "week_pillar_minutes",
@@ -45,6 +52,13 @@ def test_today_brief_keys(populated):
 def test_task_keys(populated):
     rows = core.list_tasks(populated)
     assert set(rows[0].keys()) == TASK_KEYS
+
+
+def test_archived_task_keys(populated):
+    task = core.list_tasks(populated)[0]
+    core.set_task_status(populated, task["id"], "done")
+    rows = core.list_archived_tasks(populated)
+    assert set(rows[0].keys()) == ARCHIVED_TASK_KEYS
 
 
 def test_pillar_rollup_keys(populated):

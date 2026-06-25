@@ -166,6 +166,60 @@ def list_tasks(
     return rows_to_dicts(conn.execute(sql, params).fetchall())
 
 
+def list_archived_tasks(
+    conn: sqlite3.Connection,
+    pillar: int | str | None = None,
+    completed_from: str | None = None,
+    completed_to: str | None = None,
+) -> list[dict]:
+    """Completed task archive with display metadata and logged duration."""
+    from .validation import require_pillar
+
+    where = ["t.status = 'done'"]
+    params = []
+    if pillar is not None:
+        where.append("t.pillar_id = ?")
+        params.append(require_pillar(conn, pillar)["id"])
+    if completed_from is not None:
+        where.append("t.completed_at IS NOT NULL AND t.completed_at >= ?")
+        params.append(completed_from)
+    if completed_to is not None:
+        where.append("t.completed_at IS NOT NULL AND t.completed_at <= ?")
+        params.append(completed_to)
+
+    sql = f"""
+        SELECT
+            t.id,
+            t.pillar_id,
+            p.slug AS pillar_slug,
+            p.name AS pillar_name,
+            p.color AS pillar_color,
+            t.milestone_id,
+            m.title AS milestone_title,
+            t.title,
+            t.description,
+            t.status,
+            t.is_urgent,
+            t.is_important,
+            t.estimated_duration_min,
+            COALESCE(SUM(CASE WHEN s.voided = 0 THEN s.duration_min ELSE 0 END), 0)
+                AS actual_duration_min,
+            t.due_date,
+            t.note_ref,
+            t.sort_order,
+            t.created_at,
+            t.completed_at
+        FROM tasks t
+        JOIN pillars p ON p.id = t.pillar_id
+        LEFT JOIN milestones m ON m.id = t.milestone_id
+        LEFT JOIN sessions s ON s.task_id = t.id
+        WHERE {" AND ".join(where)}
+        GROUP BY t.id
+        ORDER BY t.completed_at DESC, t.id DESC
+    """
+    return rows_to_dicts(conn.execute(sql, params).fetchall())
+
+
 def get_task(conn: sqlite3.Connection, id: int) -> dict:
     """Full task: subtasks, sessions total minutes, blocks, note_ref."""
     d = row_to_dict(require_task(conn, id))

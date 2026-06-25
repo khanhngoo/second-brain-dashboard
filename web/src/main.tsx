@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { App } from "./App";
 import { PillarFilterProvider } from "./state/pillarFilter";
+import { TaskDrawerProvider } from "./state/taskDrawer";
+import { BlockDrawerProvider } from "./state/blockDrawer";
 import "./styles.css";
 
 const queryClient = new QueryClient({
@@ -15,7 +17,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <PillarFilterProvider>
-          <App />
+          <BlockDrawerProvider>
+            <TaskDrawerProvider>
+              <App />
+            </TaskDrawerProvider>
+          </BlockDrawerProvider>
         </PillarFilterProvider>
       </BrowserRouter>
     </QueryClientProvider>

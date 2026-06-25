@@ -32,4 +32,20 @@ describe("TodayView", () => {
       expect(call).toBeTruthy();
     });
   });
+
+  it("edits a block start and duration from the drawer", async () => {
+    renderWithProviders(<TodayView />);
+    await userEvent.click(await screen.findByRole("button", { name: "Edit block 7" }));
+    expect(await screen.findByRole("dialog", { name: "Edit block" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "30m" }));
+    await userEvent.click(screen.getByRole("button", { name: "Save block" }));
+
+    await waitFor(() => {
+      const call = captured.find((c) => c.url === "/api/time_blocks/7");
+      const body = call?.body as { start_at: string; end_at: string } | undefined;
+      expect(body?.start_at).toMatch(/^2026-06-19T/);
+      expect((new Date(body!.end_at).getTime() - new Date(body!.start_at).getTime()) / 60_000).toBe(30);
+    });
+  });
 });

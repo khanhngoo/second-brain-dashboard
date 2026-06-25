@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "../test/utils";
 import { captured } from "../test/server";
 import { Timer } from "./Timer";
@@ -16,26 +16,28 @@ const baseTask: Task = {
 // the complexity; instead we stub the interval by driving elapsed time through
 // fake timers and flushing async fetches with waitFor (real msw resolution).
 describe("Timer — the three session/status semantics (docs/04)", () => {
-  beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
-  afterEach(() => vi.useRealTimers());
+  const play = vi.fn().mockResolvedValue(undefined);
 
-  it("Manual Stop logs source=manual and does NOT touch status", async () => {
-    renderWithProviders(<Timer task={baseTask} />);
-    fireEvent.click(screen.getByRole("button", { name: "Start" }));
-    await vi.advanceTimersByTimeAsync(90_000);
-    fireEvent.click(screen.getByRole("button", { name: "Stop" }));
-    await waitFor(() => expect(captured.find((c) => c.url === "/api/sessions")).toBeTruthy());
-    const session = captured.find((c) => c.url === "/api/sessions");
-    expect((session!.body as { source: string }).source).toBe("manual");
-    expect(captured.find((c) => c.url.endsWith("/status"))).toBeUndefined();
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    play.mockClear();
+    vi.stubGlobal("Audio", vi.fn(() => ({ play, src: "" })));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
-  it("Manual Done logs THEN sets status done (two writes, in order)", async () => {
+  it("Timer Finish logs source=manual and marks the task done", async () => {
     renderWithProviders(<Timer task={baseTask} />);
     fireEvent.click(screen.getByRole("button", { name: "Start" }));
-    await vi.advanceTimersByTimeAsync(30_000);
-    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(90_000);
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Finish" }));
     await waitFor(() => expect(captured.find((c) => c.url === "/api/tasks/1/status")).toBeTruthy());
+    const session = captured.find((c) => c.url === "/api/sessions");
+    expect((session!.body as { source: string }).source).toBe("manual");
     const sessionIdx = captured.findIndex((c) => c.url === "/api/sessions");
     const statusIdx = captured.findIndex((c) => c.url === "/api/tasks/1/status");
     expect(sessionIdx).toBeGreaterThanOrEqual(0);
@@ -43,18 +45,39 @@ describe("Timer — the three session/status semantics (docs/04)", () => {
     expect((captured[statusIdx].body as { status: string }).status).toBe("done");
   });
 
-  it("Pomodoro auto-logs the FULL box (source=pomodoro) at zero, no status", async () => {
-    const pomo: Task = { ...baseTask, timer_mode: "pomodoro", estimated_duration_min: 1 };
+  it("Pomodoro auto-logs selected work loops and alarms after each work loop", async () => {
+    const pomo: Task = { ...baseTask, timer_mode: "pomodoro", estimated_duration_min: 25 };
     renderWithProviders(<Timer task={pomo} />);
+    fireEvent.change(screen.getByLabelText("Pomodoro loops"), { target: { value: "2" } });
     fireEvent.click(screen.getByRole("button", { name: "Start" }));
-    await vi.advanceTimersByTimeAsync(61_000);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3_301_000);
+    });
     await waitFor(() => expect(captured.find((c) => c.url === "/api/sessions")).toBeTruthy());
     const body = captured.find((c) => c.url === "/api/sessions")!.body as {
       source: string;
       duration_min: number;
     };
     expect(body.source).toBe("pomodoro");
-    expect(body.duration_min).toBe(1);
+    expect(body.duration_min).toBe(50);
+    expect(play).toHaveBeenCalledTimes(2);
     expect(captured.find((c) => c.url.endsWith("/status"))).toBeUndefined();
+  });
+
+  it("ADHD countdown logs source=adhd and alarms at zero", async () => {
+    const adhd: Task = { ...baseTask, timer_mode: "adhd", estimated_duration_min: 1 };
+    renderWithProviders(<Timer task={adhd} />);
+    fireEvent.click(screen.getByRole("button", { name: "Start" }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(61_000);
+    });
+    await waitFor(() => expect(captured.find((c) => c.url === "/api/sessions")).toBeTruthy());
+    const body = captured.find((c) => c.url === "/api/sessions")!.body as {
+      source: string;
+      duration_min: number;
+    };
+    expect(body.source).toBe("adhd");
+    expect(body.duration_min).toBe(1);
+    expect(play).toHaveBeenCalledTimes(1);
   });
 });

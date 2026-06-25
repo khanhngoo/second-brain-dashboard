@@ -1,17 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "../test/utils";
-import { KanbanView } from "./KanbanView";
+import { EisenhowerView } from "./EisenhowerView";
 
-// Drag simulation with @dnd-kit + jsdom is brittle; the status-change wiring is
-// covered by the client test (setTaskStatus posts {status}). Here we assert the
-// board renders the three columns and places the seeded task in To Do.
-describe("KanbanView", () => {
-  it("renders three columns with the task in To Do", async () => {
-    renderWithProviders(<KanbanView />);
-    expect(await screen.findByText(/To Do/)).toBeInTheDocument();
-    expect(screen.getByText("Doing")).toBeInTheDocument();
-    expect(screen.getByText("Done")).toBeInTheDocument();
+describe("EisenhowerView", () => {
+  it("renders the four decision quadrants and seeded task", async () => {
+    renderWithProviders(<EisenhowerView />);
+    expect(await screen.findByText("Do now")).toBeInTheDocument();
+    expect(screen.getByText("Schedule")).toBeInTheDocument();
+    expect(screen.getByText("Minimize")).toBeInTheDocument();
+    expect(screen.getByText("Drop later")).toBeInTheDocument();
     expect(screen.getByText("write tests")).toBeInTheDocument();
   });
 });

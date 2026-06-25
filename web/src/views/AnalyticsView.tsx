@@ -40,12 +40,15 @@ export function AnalyticsView() {
   }));
 
   return (
-    <div>
-      <h2 className="view-title">Pillar Analytics</h2>
+    <div className="view-stack">
+      <div className="view-heading">
+        <p className="eyebrow">Pillar signal</p>
+        <h2 className="view-title">Pillar Analytics</h2>
+      </div>
 
       <section className="section">
         <h3>Open tasks per pillar</h3>
-        <div className="panel" style={{ height: 260 }}>
+        <div className="metric-panel" style={{ height: 260 }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={countData}>
               <XAxis dataKey="name" tick={{ fontSize: 11 }} />
@@ -66,7 +69,7 @@ export function AnalyticsView() {
           {BUCKETS.map((b) => (
             <button
               key={b}
-              className={bucket === b ? "btn" : "btn ghost"}
+              className={bucket === b ? "filter-tab active" : "filter-tab"}
               onClick={() => setBucket(b)}
             >
               {b}
@@ -78,7 +81,7 @@ export function AnalyticsView() {
           <p className="empty">No logged time yet for this period.</p>
         ) : (
           <div className="chart-grid">
-            <div className="panel" style={{ height: 280 }}>
+            <div className="dark-panel" style={{ height: 280 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={timeData}>
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
@@ -92,7 +95,7 @@ export function AnalyticsView() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="panel" style={{ height: 280 }}>
+            <div className="metric-panel" style={{ height: 280 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
