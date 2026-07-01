@@ -42,28 +42,27 @@ def seed_samples(conn: sqlite3.Connection) -> None:
     )
     core.create_task(
         conn, pillar="cracked_engineer", title="Write the SQLite schema",
-        milestone=m["id"], is_urgent=True, is_important=True,
-        estimated_duration_min=90,
+        milestone=m["id"], is_effort=True, is_impact=True,
     )
     t2 = core.create_task(
         conn, pillar="cracked_engineer", title="Wire the MCP server",
-        milestone=m["id"], is_important=True, estimated_duration_min=120,
+        milestone=m["id"], is_impact=True,
     )
     core.set_task_status(conn, t2["id"], "doing")
 
     core.create_task(
         conn, pillar="body_temple", title="Morning run",
-        is_urgent=False, is_important=True, estimated_duration_min=30,
+        is_effort=False, is_impact=True,
     )
     core.create_task(
         conn, pillar="polymath_knowledge", title="Read one paper",
-        is_important=True, estimated_duration_min=45,
+        is_impact=True,
     )
 
 
 def seed(conn: sqlite3.Connection, *, reset: bool = False, with_samples: bool = True) -> None:
     if reset:
-        for table in ("timers", "sessions", "time_blocks", "subtasks", "tasks",
+        for table in ("sessions", "time_blocks", "subtasks", "tasks",
                       "milestones", "external_events", "calendar_accounts", "pillars"):
             conn.execute(f"DELETE FROM {table}")
         conn.commit()

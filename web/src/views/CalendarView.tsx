@@ -1,10 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin, {
-  Draggable,
   type DateClickArg,
-  type EventReceiveArg,
   type EventResizeDoneArg,
 } from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
@@ -21,9 +19,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   CalendarClock,
   Check,
-  GripVertical,
   Pencil,
-  Plus,
   RefreshCw,
   Trash2,
   X,
@@ -42,7 +38,6 @@ import {
   syncCalendar,
 } from "../api/client";
 import { keys, useInvalidateAll } from "../hooks/queries";
-import { Timer } from "../components/Timer";
 import { useTaskDrawer } from "../state/taskDrawer";
 import { useBlockDrawer } from "../state/blockDrawer";
 import { usePillarFilter } from "../state/pillarFilter";
@@ -145,26 +140,6 @@ function blendWithCanvas(hex: string, opacity: number) {
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
-function SidePanelTask({ task }: { task: Task }) {
-  return (
-    <div
-      className="task-card fc-task-draggable"
-      data-task-id={task.id}
-      data-duration-min={task.estimated_duration_min ?? FALLBACK_DURATION_MIN}
-      data-title={task.title}
-    >
-      <div className="task-card-head">
-        <div>
-          <div className="task-title">{task.title}</div>
-          <div className="task-pillar">{task.estimated_duration_min ?? FALLBACK_DURATION_MIN} min planned</div>
-        </div>
-        <GripVertical size={16} className="muted-icon" />
-      </div>
-      <Timer task={task} compact />
-    </div>
-  );
-}
-
 export function CalendarView() {
   const [range, setRange] = useState(initialVisibleRange);
   const [pendingSelection, setPendingSelection] = useState<PendingSelection | null>(null);
@@ -173,7 +148,6 @@ export function CalendarView() {
   const { openTaskDrawer } = useTaskDrawer();
   const { openBlockDrawer } = useBlockDrawer();
   const { apiPillar } = usePillarFilter();
-  const taskRailRef = useRef<HTMLElement | null>(null);
 
   const { data: blocks } = useQuery({
     queryKey: keys.timeBlocks(range.start, range.end),
@@ -222,26 +196,6 @@ export function CalendarView() {
     mutationFn: (id: number) => setTaskStatus(id, "done"),
     onSuccess: invalidate,
   });
-
-  useEffect(() => {
-    if (!taskRailRef.current) return;
-    const draggable = new Draggable(taskRailRef.current, {
-      itemSelector: ".fc-task-draggable",
-      eventData: (el) => {
-        const durationMin = Number(el.dataset.durationMin || FALLBACK_DURATION_MIN);
-        return {
-          title: el.dataset.title || `Task #${el.dataset.taskId}`,
-          duration: { minutes: durationMin },
-          create: true,
-          extendedProps: {
-            taskId: Number(el.dataset.taskId),
-            durationMin,
-          },
-        };
-      },
-    });
-    return () => draggable.destroy();
-  }, [openTasks]);
 
   const taskById = useMemo(() => {
     const map = new Map<number, Task>();
@@ -377,28 +331,6 @@ export function CalendarView() {
     setDetailPopover(null);
   }
 
-  async function handleEventReceive(arg: EventReceiveArg) {
-    const taskId = Number(arg.event.extendedProps.taskId);
-    const durationMin = Number(arg.event.extendedProps.durationMin || FALLBACK_DURATION_MIN);
-    if (!taskId || !arg.event.start) {
-      arg.revert();
-      return;
-    }
-
-    const { start_at, end_at } = normalizeTimedRange(
-      arg.event.start,
-      arg.event.end,
-      durationMin,
-      arg.event.allDay,
-    );
-    try {
-      await create.mutateAsync({ taskId, start_at, end_at });
-      arg.event.remove();
-    } catch {
-      arg.revert();
-    }
-  }
-
   async function handleEventDrop(arg: EventDropArg) {
     const blockId = Number(arg.event.extendedProps.blockId);
     if (!blockId || !arg.event.start) {
@@ -513,19 +445,6 @@ export function CalendarView() {
         </button>
       </div>
       <div className="cal-layout">
-        <aside className="schedule-rail" ref={taskRailRef}>
-          <div className="rail-head">
-            <h3>To schedule</h3>
-            <button className="icon-btn" type="button" onClick={() => openTaskDrawer({ pillar: apiPillar })} aria-label="Add task">
-              <Plus size={16} />
-            </button>
-          </div>
-          {(openTasks ?? []).map((t) => (
-            <SidePanelTask key={t.id} task={t} />
-          ))}
-          {(openTasks ?? []).length === 0 && <p className="empty">No open tasks.</p>}
-        </aside>
-
         <div className="full-calendar-shell">
           <FullCalendar
             plugins={[timeGridPlugin, dayGridPlugin, listPlugin, interactionPlugin]}
@@ -541,7 +460,6 @@ export function CalendarView() {
             slotMaxTime="21:00:00"
             nowIndicator
             editable
-            droppable
             selectable
             selectMirror
             eventResizableFromStart
@@ -551,7 +469,6 @@ export function CalendarView() {
             dateClick={handleDateClick}
             select={handleSelect}
             eventClick={handleEventClick}
-            eventReceive={handleEventReceive}
             eventDrop={handleEventDrop}
             eventResize={handleEventResize}
             eventContent={renderEventContent}
@@ -582,7 +499,7 @@ export function CalendarView() {
                       style={{ background: pillarById.get(task.pillar_id)?.color ?? NEUTRAL_BLOCK_COLOR }}
                     />
                     <span>{task.title}</span>
-                    <span className="muted">{task.estimated_duration_min ?? FALLBACK_DURATION_MIN}m</span>
+                    <span className="muted">{FALLBACK_DURATION_MIN}m</span>
                   </button>
                 ))}
                 {(openTasks ?? []).length === 0 && <p className="empty">No todo tasks in this filter.</p>}
@@ -606,8 +523,6 @@ export function CalendarView() {
                   <div className="detail-grid">
                     <span>Status</span>
                     <strong>{selectedTaskDetail?.status ?? "loading"}</strong>
-                    <span>Estimate</span>
-                    <strong>{selectedTaskDetail?.estimated_duration_min ?? FALLBACK_DURATION_MIN} min</strong>
                     {selectedTaskDetail?.due_date && (
                       <>
                         <span>Due</span>

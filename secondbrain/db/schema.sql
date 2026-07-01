@@ -1,12 +1,11 @@
 -- Second Brain schema (see docs/02 — Data Model).
 -- All times are UTC ISO-8601 TEXT. Booleans are INTEGER 0/1.
 --
--- Tables 1:1 with docs/02, plus three P0 additions (marked [P0+]):
---   * timers                  -- server-managed timer state (docs/04)
+-- Tables 1:1 with docs/02, plus two P0 additions (marked [P0+]):
 --   * sessions.voided         -- soft-void for skipped auto-logs (reversibility)
 --   * time_blocks.confirmed   -- morning-brief confirm state
 
-PRAGMA user_version = 2;
+PRAGMA user_version = 3;
 
 -- ---------------------------------------------------------------------------
 -- pillars  (the five fixed life pillars; rows are extensible, seed exactly 5)
@@ -48,10 +47,8 @@ CREATE TABLE IF NOT EXISTS tasks (
     title                  TEXT NOT NULL,
     description            TEXT,
     status                 TEXT NOT NULL DEFAULT 'todo',   -- todo / doing / done / archived
-    is_urgent              INTEGER NOT NULL DEFAULT 0,
-    is_important           INTEGER NOT NULL DEFAULT 0,
-    estimated_duration_min INTEGER,
-    timer_mode             TEXT,           -- pomodoro / manual / adhd
+    is_impact              INTEGER NOT NULL DEFAULT 0,
+    is_effort              INTEGER NOT NULL DEFAULT 0,
     due_date               TEXT,
     note_ref               TEXT,           -- link to an Obsidian note (docs/06)
     sort_order             INTEGER NOT NULL DEFAULT 0,
@@ -128,17 +125,6 @@ CREATE TABLE IF NOT EXISTS calendar_accounts (
     sync_token    TEXT,
     last_sync     TEXT,
     created_at    TEXT NOT NULL
-);
-
--- ---------------------------------------------------------------------------
--- timers  [P0+]  (server-managed timer state; one active timer per task)
--- DB-backed because MCP and HTTP run as separate processes sharing one file.
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS timers (
-    task_id    INTEGER PRIMARY KEY REFERENCES tasks(id) ON DELETE CASCADE,
-    mode       TEXT NOT NULL,        -- pomodoro / manual
-    started_at TEXT NOT NULL,
-    est_min    INTEGER
 );
 
 -- ---------------------------------------------------------------------------

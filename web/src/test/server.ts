@@ -39,8 +39,8 @@ export const samplePillars: PillarRollup[] = [
 export const sampleKanban: Kanban = {
   todo: [{
     id: 1, pillar_id: 4, milestone_id: null, title: "write tests", description: null,
-    status: "todo", is_urgent: 0, is_important: 1, estimated_duration_min: 30,
-    timer_mode: null, due_date: null, note_ref: null, sort_order: 0,
+    status: "todo", is_impact: 1, is_effort: 0,
+    due_date: null, note_ref: null, sort_order: 0,
     created_at: "2026-06-20T00:00:00+00:00", completed_at: null,
   }],
   doing: [],
@@ -59,9 +59,8 @@ export const sampleArchivedTasks: ArchivedTask[] = [
     title: "archive finished work",
     description: "Build an archive table",
     status: "done",
-    is_urgent: 0,
-    is_important: 1,
-    estimated_duration_min: 30,
+    is_impact: 1,
+    is_effort: 0,
     actual_duration_min: 75,
     due_date: "2026-06-22",
     note_ref: null,
@@ -80,9 +79,8 @@ export const sampleArchivedTasks: ArchivedTask[] = [
     title: "short cleanup",
     description: null,
     status: "done",
-    is_urgent: 0,
-    is_important: 0,
-    estimated_duration_min: null,
+    is_impact: 0,
+    is_effort: 0,
     actual_duration_min: 15,
     due_date: null,
     note_ref: "notes/cleanup.md",
@@ -141,12 +139,12 @@ export const handlers = [
   http.get("/api/calendar/status", () =>
     HttpResponse.json({ enabled: false, accounts: [] })
   ),
-  http.get("/api/eisenhower", () =>
+  http.get("/api/impact-effort", () =>
     HttpResponse.json({
-      urgent_important: [],
-      not_urgent_important: sampleKanban.todo,
-      urgent_not_important: [],
-      not_urgent_not_important: [],
+      high_impact_low_effort: sampleKanban.todo,
+      high_impact_high_effort: [],
+      low_impact_low_effort: [],
+      low_impact_high_effort: [],
     })
   ),
 ];

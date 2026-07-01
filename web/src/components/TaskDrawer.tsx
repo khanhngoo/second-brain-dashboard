@@ -3,7 +3,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { createTask, getTask, updateTask } from "../api/client";
 import { useMilestones, usePillars, useInvalidateAll } from "../hooks/queries";
 import { useTaskDrawer } from "../state/taskDrawer";
-import { DurationInput } from "./DurationInput";
 import { SessionLogger } from "./SessionLogger";
 import { SubtaskList } from "./SubtaskList";
 import {
@@ -35,7 +34,6 @@ export function TaskDrawer() {
   const [pillar, setPillar] = useState("");
   const [milestone, setMilestone] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [estimate, setEstimate] = useState(30);
   const [effort, setEffort] = useState(false);
   const [impact, setImpact] = useState(false);
   const [noteRef, setNoteRef] = useState("");
@@ -50,7 +48,6 @@ export function TaskDrawer() {
       setPillar(String(editingTask.pillar_id));
       setMilestone(editingTask.milestone_id != null ? String(editingTask.milestone_id) : "");
       setDueDate(editingTask.due_date ?? "");
-      setEstimate(editingTask.estimated_duration_min ?? 30);
       setEffort(Boolean(editingTask.is_effort));
       setImpact(Boolean(editingTask.is_impact));
       setNoteRef(editingTask.note_ref ?? "");
@@ -60,7 +57,6 @@ export function TaskDrawer() {
     setPillar(draft.pillar != null ? String(draft.pillar) : "");
     setMilestone(draft.milestone != null ? String(draft.milestone) : "");
     setDueDate(draft.due_date ?? "");
-    setEstimate(draft.estimated_duration_min ?? 30);
     setEffort(Boolean(draft.is_effort));
     setImpact(Boolean(draft.is_impact));
     setNoteRef(draft.note_ref ?? "");
@@ -73,7 +69,6 @@ export function TaskDrawer() {
         title: title.trim(),
         milestone: cleanNumber(milestone),
         due_date: dueDate || undefined,
-        estimated_duration_min: estimate,
         is_impact: impact,
         is_effort: effort,
         note_ref: noteRef.trim() || undefined,
@@ -90,7 +85,6 @@ export function TaskDrawer() {
         milestone_id: cleanNumber(milestone) ?? null,
         title: title.trim(),
         due_date: dueDate || null,
-        estimated_duration_min: estimate,
         is_impact: impact ? 1 : 0,
         is_effort: effort ? 1 : 0,
         note_ref: noteRef.trim() || null,
@@ -153,13 +147,10 @@ export function TaskDrawer() {
                 </select>
               </label>
 
-              <div className="form-grid">
-                <label>
-                  <span>Due date</span>
-                  <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-                </label>
-                <DurationInput value={estimate} onChange={setEstimate} />
-              </div>
+              <label>
+                <span>Due date</span>
+                <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+              </label>
 
               <label>
                 <span>Note ref</span>

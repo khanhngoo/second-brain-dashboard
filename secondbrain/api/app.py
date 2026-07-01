@@ -44,10 +44,8 @@ class CreateTaskBody(BaseModel):
     title: str
     milestone: int | None = None
     description: str | None = None
-    is_urgent: bool = False
-    is_important: bool = False
-    estimated_duration_min: int | None = None
-    timer_mode: str | None = None
+    is_impact: bool = False
+    is_effort: bool = False
     due_date: str | None = None
     note_ref: str | None = None
 
@@ -78,16 +76,6 @@ class LogSessionBody(BaseModel):
     started_at: str | None = None
     ended_at: str | None = None
     note: str | None = None
-
-
-class StartTimerBody(BaseModel):
-    task_id: int
-    mode: str | None = None
-
-
-class StopTimerBody(BaseModel):
-    task_id: int
-    mark_done: bool = False
 
 
 class TimeBlockBody(BaseModel):
@@ -162,9 +150,9 @@ def kanban(pillar: str | None = None):
     return core.get_kanban(_conn(), pillar)
 
 
-@app.get("/eisenhower")
-def eisenhower(pillar: str | None = None):
-    return core.get_eisenhower(_conn(), pillar)
+@app.get("/impact-effort")
+def impact_effort(pillar: str | None = None):
+    return core.get_impact_effort(_conn(), pillar)
 
 
 @app.get("/pillar_time")
@@ -225,16 +213,6 @@ def log_session(body: LogSessionBody):
         _conn(), body.task_id, body.duration_min, body.source,
         body.started_at, body.ended_at, body.note,
     )
-
-
-@app.post("/timers/start")
-def start_timer(body: StartTimerBody):
-    return core.start_timer(_conn(), body.task_id, body.mode)
-
-
-@app.post("/timers/stop")
-def stop_timer(body: StopTimerBody):
-    return core.stop_timer(_conn(), body.task_id, body.mark_done)
 
 
 @app.post("/time_blocks")

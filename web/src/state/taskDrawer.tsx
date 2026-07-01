@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
-import type { TimerMode } from "../api/types";
 
 export interface TaskDraft {
   taskId?: number;
@@ -7,10 +6,8 @@ export interface TaskDraft {
   milestone?: number;
   title?: string;
   description?: string;
-  is_urgent?: boolean;
-  is_important?: boolean;
-  estimated_duration_min?: number;
-  timer_mode?: TimerMode;
+  is_impact?: boolean;
+  is_effort?: boolean;
   due_date?: string;
   note_ref?: string;
 }

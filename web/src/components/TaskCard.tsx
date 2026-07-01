@@ -8,7 +8,7 @@ import { Checkbox } from "./ui/checkbox";
 import { SubtaskList } from "./SubtaskList";
 
 function formatDuration(min: number | null | undefined): string | null {
-  if (min == null) return null;
+  if (min == null || min === 0) return null;
   if (min < 60) return `${min}m`;
   const h = Math.floor(min / 60);
   const m = min % 60;
@@ -33,7 +33,7 @@ export function TaskCard({ task }: { task: Task; showSubtasks?: boolean }) {
     if (done) setSubtasksOpen(false);
   }, [done]);
 
-  const duration = formatDuration(task.estimated_duration_min);
+  const duration = formatDuration(task.actual_duration_min);
   const hasMeta = Boolean(task.milestone_title) || Boolean(duration);
 
   return (

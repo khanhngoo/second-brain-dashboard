@@ -42,10 +42,14 @@ def get_impact_effort(conn: sqlite3.Connection, pillar: int | str | None = None)
     where = f"{clause} AND {extra}" if clause else f"WHERE {extra}"
     rows = conn.execute(
         f"""
-        SELECT t.*, m.title AS milestone_title
+        SELECT t.*, m.title AS milestone_title,
+               COALESCE(SUM(CASE WHEN s.voided = 0 THEN s.duration_min ELSE 0 END), 0)
+                   AS actual_duration_min
         FROM tasks t
         LEFT JOIN milestones m ON m.id = t.milestone_id
+        LEFT JOIN sessions s ON s.task_id = t.id
         {where}
+        GROUP BY t.id
         ORDER BY t.sort_order, t.id
         """,
         params,

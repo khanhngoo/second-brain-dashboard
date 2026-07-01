@@ -10,13 +10,13 @@ from secondbrain.seed import seed_pillars
 
 TASK_KEYS = {
     "id", "pillar_id", "milestone_id", "title", "description", "status",
-    "is_urgent", "is_important", "estimated_duration_min", "timer_mode",
+    "is_impact", "is_effort",
     "due_date", "note_ref", "sort_order", "created_at", "completed_at",
 }
 ARCHIVED_TASK_KEYS = {
     "id", "pillar_id", "pillar_slug", "pillar_name", "pillar_color",
     "milestone_id", "milestone_title", "title", "description", "status",
-    "is_urgent", "is_important", "estimated_duration_min",
+    "is_impact", "is_effort",
     "actual_duration_min", "due_date", "note_ref", "sort_order",
     "created_at", "completed_at",
 }
@@ -29,9 +29,9 @@ PILLAR_ROLLUP_KEYS = {
     "active_milestones", "open_tasks", "minutes_this_week",
 }
 KANBAN_KEYS = {"todo", "doing", "done"}
-EISENHOWER_KEYS = {
-    "urgent_important", "not_urgent_important",
-    "urgent_not_important", "not_urgent_not_important",
+IMPACT_EFFORT_KEYS = {
+    "high_impact_low_effort", "high_impact_high_effort",
+    "low_impact_low_effort", "low_impact_high_effort",
 }
 PILLAR_TIME_KEYS = {"pillar_id", "slug", "name", "bucket", "minutes"}
 
@@ -69,8 +69,8 @@ def test_kanban_keys(populated):
     assert set(core.get_kanban(populated).keys()) == KANBAN_KEYS
 
 
-def test_eisenhower_keys(populated):
-    assert set(core.get_eisenhower(populated).keys()) == EISENHOWER_KEYS
+def test_impact_effort_keys(populated):
+    assert set(core.get_impact_effort(populated).keys()) == IMPACT_EFFORT_KEYS
 
 
 def test_pillar_time_keys(populated):

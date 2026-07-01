@@ -48,13 +48,13 @@ export interface Task {
   status: TaskStatus;
   is_impact: number;
   is_effort: number;
-  estimated_duration_min: number | null;
   due_date: string | null;
   note_ref: string | null;
   sort_order: number;
   created_at: string;
   completed_at: string | null;
   milestone_title?: string | null;
+  actual_duration_min?: number;
 }
 
 export interface ArchivedTask {
@@ -70,7 +70,6 @@ export interface ArchivedTask {
   status: "done";
   is_impact: number;
   is_effort: number;
-  estimated_duration_min: number | null;
   actual_duration_min: number;
   due_date: string | null;
   note_ref: string | null;

@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import {
-  flexRender,
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
@@ -9,19 +8,11 @@ import {
   type SortingState,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { Archive, ArrowUpDown, CalendarCheck2, Columns3, Eye, TimerReset } from "lucide-react";
+import { Archive, CalendarCheck2, Eye, TimerReset } from "lucide-react";
 import type { ArchivedTask } from "../api/types";
 import { formatDuration } from "../components/DurationInput";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../components/ui/dropdown-menu";
 import { Input } from "../components/ui/input";
 import {
   Select,
@@ -30,19 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../components/ui/table";
+import { DataTable } from "../components/data-table/DataTable";
+import { DataTableColumnHeader } from "../components/data-table/DataTableColumnHeader";
+import { DataTableViewOptions } from "../components/data-table/DataTableViewOptions";
 import { useArchivedTasks, usePillars } from "../hooks/queries";
-import { ALL, usePillarFilter } from "../state/pillarFilter";
 import { useTaskDrawer } from "../state/taskDrawer";
 
 const ALL_VALUE = "__all";
+const ARCHIVE_ALL = "all";
 
 function dateOnly(value: string | null) {
   return value ? value.slice(0, 10) : "No date";
@@ -56,18 +42,10 @@ function completedEnd(value: string) {
   return value ? `${value}T23:59:59+00:00` : undefined;
 }
 
-function SortButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <Button className="archive-sort-btn" variant="ghost" size="sm" onClick={onClick} type="button">
-      {label}
-      <ArrowUpDown size={14} />
-    </Button>
-  );
-}
-
 export function ArchiveView() {
   const { data: pillars } = usePillars();
-  const { pillar, apiPillar, setPillar } = usePillarFilter();
+  const [pillar, setPillar] = useState<string>(ARCHIVE_ALL);
+  const apiPillar = pillar === ARCHIVE_ALL ? undefined : pillar;
   const { openTaskDrawer } = useTaskDrawer();
   const [completedFrom, setCompletedFrom] = useState("");
   const [completedTo, setCompletedTo] = useState("");
@@ -78,7 +56,6 @@ export function ArchiveView() {
   const [sorting, setSorting] = useState<SortingState>([{ id: "completed_at", desc: true }]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     due_date: false,
-    estimated_duration_min: false,
   });
 
   const { data, isLoading } = useArchivedTasks({
@@ -123,9 +100,7 @@ export function ArchiveView() {
     () => [
       {
         accessorKey: "title",
-        header: ({ column }) => (
-          <SortButton label="Task" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Task" />,
         cell: ({ row }) => {
           const task = row.original;
           return (
@@ -140,9 +115,7 @@ export function ArchiveView() {
       },
       {
         accessorKey: "pillar_name",
-        header: ({ column }) => (
-          <SortButton label="Pillar" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Pillar" />,
         cell: ({ row }) => (
           <Badge className="archive-pillar-badge" variant="outline">
             <span className="dot" style={{ background: row.original.pillar_color ?? "#888" }} />
@@ -157,25 +130,13 @@ export function ArchiveView() {
       },
       {
         accessorKey: "completed_at",
-        header: ({ column }) => (
-          <SortButton label="Completed" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Completed" />,
         cell: ({ row }) => dateOnly(row.original.completed_at),
       },
       {
         accessorKey: "actual_duration_min",
-        header: ({ column }) => (
-          <SortButton label="Actual" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Actual" />,
         cell: ({ row }) => formatDuration(row.original.actual_duration_min),
-      },
-      {
-        accessorKey: "estimated_duration_min",
-        header: "Estimate",
-        cell: ({ row }) =>
-          row.original.estimated_duration_min != null
-            ? formatDuration(row.original.estimated_duration_min)
-            : <span className="muted">None</span>,
       },
       {
         accessorKey: "due_date",
@@ -187,8 +148,8 @@ export function ArchiveView() {
         header: "Flags",
         cell: ({ row }) => {
           const flags = [
-            row.original.is_urgent ? "Urgent" : null,
-            row.original.is_important ? "Important" : null,
+            row.original.is_impact ? "Impact" : null,
+            row.original.is_effort ? "Effort" : null,
           ].filter(Boolean);
           return flags.length ? flags.join(" + ") : <span className="muted">None</span>;
         },
@@ -256,7 +217,7 @@ export function ArchiveView() {
         </label>
         <label className="archive-filter">
           <span>Pillar</span>
-          <Select value={pillar === ALL ? ALL_VALUE : pillar} onValueChange={(value) => setPillar(value === ALL_VALUE ? ALL : value)}>
+          <Select value={pillar === ARCHIVE_ALL ? ALL_VALUE : pillar} onValueChange={(value) => setPillar(value === ALL_VALUE ? ARCHIVE_ALL : value)}>
             <SelectTrigger>
               <SelectValue placeholder="All pillars" />
             </SelectTrigger>
@@ -302,98 +263,23 @@ export function ArchiveView() {
           <span>Max min</span>
           <Input inputMode="numeric" value={maxDuration} onChange={(event) => setMaxDuration(event.target.value)} />
         </label>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button className="archive-columns" variant="outline" type="button">
-              <Columns3 size={15} />
-              Columns
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => (
-                <DropdownMenuCheckboxItem
-                  key={column.id}
-                  checked={column.getIsVisible()}
-                  onCheckedChange={(value) => column.toggleVisibility(Boolean(value))}
-                >
-                  {column.id.replace(/_/g, " ")}
-                </DropdownMenuCheckboxItem>
-              ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <DataTableViewOptions table={table} />
       </section>
 
       <section className="archive-table-shell">
         {isLoading ? (
           <p className="muted">Loading archived tasks...</p>
         ) : (
-          <>
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(header.column.columnDef.header, header.getContext())}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell className="archive-empty-cell" colSpan={columns.length}>
-                      <CalendarCheck2 size={18} />
-                      No finished tasks match these filters.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-            <div className="archive-pagination">
-              <span>
-                Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
-              </span>
-              <div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => table.previousPage()}
-                  disabled={!table.getCanPreviousPage()}
-                  type="button"
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => table.nextPage()}
-                  disabled={!table.getCanNextPage()}
-                  type="button"
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          </>
+          <DataTable
+            table={table}
+            columnCount={columns.length}
+            empty={
+              <>
+                <CalendarCheck2 size={18} />
+                No finished tasks match these filters.
+              </>
+            }
+          />
         )}
       </section>
     </div>

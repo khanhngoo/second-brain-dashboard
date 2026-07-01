@@ -16,7 +16,6 @@ from ..errors import ValidationError
 from .serialize import row_to_dict, rows_to_dicts
 from .validation import (
     TASK_STATUSES,
-    TIMER_MODES,
     check_enum,
     quadrant_to_flags,
     require_task,
@@ -35,16 +34,12 @@ def create_task(
     title: str,
     milestone: int | None = None,
     description: str | None = None,
-    is_urgent: bool = False,
-    is_important: bool = False,
-    estimated_duration_min: int | None = None,
-    timer_mode: str | None = None,
+    is_impact: bool = False,
+    is_effort: bool = False,
     due_date: str | None = None,
     note_ref: str | None = None,
 ) -> dict:
     pillar_id = resolve_task_pillar(conn, pillar=pillar, milestone_id=milestone)
-    if timer_mode is not None:
-        check_enum(timer_mode, TIMER_MODES, "timer_mode")
     now = clock.now_utc_iso()
     nxt = conn.execute(
         "SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM tasks WHERE pillar_id = ?",
@@ -55,14 +50,14 @@ def create_task(
             """
             INSERT INTO tasks
                 (pillar_id, milestone_id, title, description, status,
-                 is_urgent, is_important, estimated_duration_min, timer_mode,
+                 is_impact, is_effort,
                  due_date, note_ref, sort_order, created_at)
-            VALUES (?, ?, ?, ?, 'todo', ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, 'todo', ?, ?, ?, ?, ?, ?)
             """,
             (
                 pillar_id, milestone, title, description,
-                int(bool(is_urgent)), int(bool(is_important)),
-                estimated_duration_min, timer_mode, due_date, note_ref, nxt, now,
+                int(bool(is_impact)), int(bool(is_effort)),
+                due_date, note_ref, nxt, now,
             ),
         )
     return _get_raw(conn, cur.lastrowid)
@@ -71,8 +66,8 @@ def create_task(
 # Fields update_task may set. Note: status is deliberately excluded.
 _UPDATABLE = {
     "title", "description", "milestone_id", "pillar_id",
-    "is_urgent", "is_important", "estimated_duration_min",
-    "timer_mode", "due_date", "note_ref", "sort_order",
+    "is_impact", "is_effort",
+    "due_date", "note_ref", "sort_order",
 }
 
 
@@ -101,12 +96,9 @@ def update_task(conn: sqlite3.Connection, id: int, **fields) -> dict:
             conn, pillar=constraint_pillar, milestone_id=new_milestone
         )
 
-    if "timer_mode" in fields and fields["timer_mode"] is not None:
-        check_enum(fields["timer_mode"], TIMER_MODES, "timer_mode")
-
     sets, params = [], []
     for k, v in fields.items():
-        if k in ("is_urgent", "is_important"):
+        if k in ("is_impact", "is_effort"):
             v = int(bool(v))
         sets.append(f"{k} = ?")
         params.append(v)
@@ -152,9 +144,9 @@ def list_tasks(
         where.append("status = ?")
         params.append(check_enum(status, TASK_STATUSES, "status"))
     if quadrant is not None:
-        u, i = quadrant_to_flags(quadrant)
-        where.append("is_urgent = ? AND is_important = ?")
-        params += [u, i]
+        imp, eff = quadrant_to_flags(quadrant)
+        where.append("is_impact = ? AND is_effort = ?")
+        params += [imp, eff]
     if due_before is not None:
         where.append("due_date IS NOT NULL AND due_date < ?")
         params.append(due_before)
@@ -199,9 +191,8 @@ def list_archived_tasks(
             t.title,
             t.description,
             t.status,
-            t.is_urgent,
-            t.is_important,
-            t.estimated_duration_min,
+            t.is_impact,
+            t.is_effort,
             COALESCE(SUM(CASE WHEN s.voided = 0 THEN s.duration_min ELSE 0 END), 0)
                 AS actual_duration_min,
             t.due_date,

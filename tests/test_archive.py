@@ -8,7 +8,6 @@ def test_archive_lists_done_tasks_with_actual_duration(seeded_db, frozen_clock):
         pillar="cracked_engineer",
         milestone=milestone["id"],
         title="finished task",
-        estimated_duration_min=45,
     )
     todo = core.create_task(seeded_db, pillar="cracked_engineer", title="open task")
     archived = core.create_task(seeded_db, pillar="cracked_engineer", title="discarded task")
@@ -24,7 +23,6 @@ def test_archive_lists_done_tasks_with_actual_duration(seeded_db, frozen_clock):
 
     assert [r["title"] for r in rows] == ["finished task"]
     assert rows[0]["actual_duration_min"] == 40
-    assert rows[0]["estimated_duration_min"] == 45
     assert rows[0]["pillar_name"] == "Cracked Engineer"
     assert rows[0]["milestone_title"] == "Archive M"
     assert rows[0]["completed_at"] == "2026-06-21T10:00:00+00:00"

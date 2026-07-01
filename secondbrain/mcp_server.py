@@ -64,8 +64,8 @@ def get_kanban(pillar: str | int | None = None) -> dict:
 
 
 @mcp.tool()
-def get_eisenhower(pillar: str | int | None = None) -> dict:
-    return core.get_eisenhower(_conn(), pillar)
+def get_impact_effort(pillar: str | int | None = None) -> dict:
+    return core.get_impact_effort(_conn(), pillar)
 
 
 @mcp.tool()
@@ -91,17 +91,14 @@ def create_task(
     title: str,
     milestone: int | None = None,
     description: str | None = None,
-    is_urgent: bool = False,
-    is_important: bool = False,
-    estimated_duration_min: int | None = None,
-    timer_mode: str | None = None,
+    is_impact: bool = False,
+    is_effort: bool = False,
     due_date: str | None = None,
     note_ref: str | None = None,
 ) -> dict:
     return core.create_task(
         _conn(), pillar=pillar, title=title, milestone=milestone, description=description,
-        is_urgent=is_urgent, is_important=is_important,
-        estimated_duration_min=estimated_duration_min, timer_mode=timer_mode,
+        is_impact=is_impact, is_effort=is_effort,
         due_date=due_date, note_ref=note_ref,
     )
 
@@ -155,16 +152,6 @@ def log_session(
     note: str | None = None,
 ) -> dict:
     return core.log_session(_conn(), task_id, duration_min, source, started_at, ended_at, note)
-
-
-@mcp.tool()
-def start_timer(task_id: int, mode: str | None = None) -> dict:
-    return core.start_timer(_conn(), task_id, mode)
-
-
-@mcp.tool()
-def stop_timer(task_id: int, mark_done: bool = False) -> dict:
-    return core.stop_timer(_conn(), task_id, mark_done)
 
 
 # --- Writes: scheduling ---------------------------------------------------

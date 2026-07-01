@@ -5,7 +5,7 @@ import type {
   ArchivedTask,
   Bucket,
   CalendarStatus,
-  Eisenhower,
+  ImpactEffort,
   ExternalEvent,
   Kanban,
   Milestone,
@@ -88,8 +88,8 @@ export const getTask = (id: number) => request<TaskDetail>(`/tasks/${id}`);
 export const getKanban = (pillar?: string) =>
   request<Kanban>(`/kanban${qs({ pillar })}`);
 
-export const getEisenhower = (pillar?: string) =>
-  request<Eisenhower>(`/eisenhower${qs({ pillar })}`);
+export const getImpactEffort = (pillar?: string) =>
+  request<ImpactEffort>(`/impact-effort${qs({ pillar })}`);
 
 export const getPillarTime = (bucket: Bucket, start?: string, end?: string) =>
   request<PillarTimeRow[]>(`/pillar_time${qs({ bucket, start, end })}`);
@@ -108,10 +108,8 @@ export const createTask = (body: {
   title: string;
   milestone?: number;
   description?: string;
-  is_urgent?: boolean;
-  is_important?: boolean;
-  estimated_duration_min?: number;
-  timer_mode?: string;
+  is_impact?: boolean;
+  is_effort?: boolean;
   due_date?: string;
   note_ref?: string;
 }) => request<Task>("/tasks", { method: "POST", body: JSON.stringify(body) });
@@ -148,13 +146,7 @@ export const logSession = (body: {
   note?: string;
 }) => request("/sessions", { method: "POST", body: JSON.stringify(body) });
 
-export const startTimer = (task_id: number, mode?: string) =>
-  request("/timers/start", { method: "POST", body: JSON.stringify({ task_id, mode }) });
-
-export const stopTimer = (task_id: number, mark_done = false) =>
-  request("/timers/stop", { method: "POST", body: JSON.stringify({ task_id, mark_done }) });
-
-export const createTimeBlock = (task_id: number, start_at: string, end_at: string) =>
+export const createTimeBlock =(task_id: number, start_at: string, end_at: string) =>
   request<TimeBlock>("/time_blocks", {
     method: "POST",
     body: JSON.stringify({ task_id, start_at, end_at }),
