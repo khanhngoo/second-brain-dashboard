@@ -1,64 +1,104 @@
+import { useEffect, useState } from "react";
 import type { Task } from "../api/types";
 import { usePillarLookup } from "./PillarBadge";
-import { CalendarDays, CheckCircle2, Clock3, Flag, PlayCircle } from "lucide-react";
+import { Clock3, Milestone as MilestoneIcon } from "lucide-react";
 import { useSetTaskStatus } from "../hooks/queries";
-import { Timer } from "./Timer";
+import { useTaskDrawer } from "../state/taskDrawer";
+import { Checkbox } from "./ui/checkbox";
+import { SubtaskList } from "./SubtaskList";
 
-export function TaskCard({ task, compact = false }: { task: Task; compact?: boolean }) {
+function formatDuration(min: number | null | undefined): string | null {
+  if (min == null) return null;
+  if (min < 60) return `${min}m`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m ? `${h}h ${m}m` : `${h}h`;
+}
+
+// Compact "stick" task row: checkbox + title, a muted meta line (milestone +
+// duration), pillar badge top-right, and an inline collapsible subtask panel.
+// The row is clickable and opens the task sheet; the checkbox and subtask panel
+// stop propagation so they don't trigger it. Ticking done dims + strikes the
+// title and force-collapses the subtask panel (kept short — matrix holds many).
+export function TaskCard({ task }: { task: Task; showSubtasks?: boolean }) {
   const lookup = usePillarLookup();
   const status = useSetTaskStatus();
-  const color = lookup(task.pillar_id)?.color ?? "#888";
+  const { openTaskDrawer } = useTaskDrawer();
+  const pillar = lookup(task.pillar_id);
+  const done = task.status === "done";
+
+  const [subtasksOpen, setSubtasksOpen] = useState(false);
+  // Force-collapse when the task is marked done.
+  useEffect(() => {
+    if (done) setSubtasksOpen(false);
+  }, [done]);
+
+  const duration = formatDuration(task.estimated_duration_min);
+  const hasMeta = Boolean(task.milestone_title) || Boolean(duration);
+
   return (
-    <div className="task-card" style={{ borderLeftColor: color }}>
-      <div className="task-card-head">
-        <div>
-          <div className="task-title">{task.title}</div>
-          <div className="task-pillar">{lookup(task.pillar_id)?.name ?? "Unknown pillar"}</div>
-        </div>
-        <select
-          className="status-select"
-          value={task.status}
-          disabled={status.isPending}
-          onChange={(e) => status.mutate({ id: task.id, status: e.target.value })}
-          aria-label={`Status for ${task.title}`}
-        >
-          <option value="todo">To do</option>
-          <option value="doing">Doing</option>
-          <option value="done">Done</option>
-          <option value="archived">Archived</option>
-        </select>
+    <div
+      className={done ? "task-card done" : "task-card"}
+      role="button"
+      tabIndex={0}
+      onClick={() => openTaskDrawer({ taskId: task.id })}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openTaskDrawer({ taskId: task.id });
+        }
+      }}
+    >
+      <div className="task-card-main">
+        <span className="task-check" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+          <Checkbox
+            checked={done}
+            disabled={status.isPending}
+            onCheckedChange={(checked) =>
+              status.mutate({ id: task.id, status: checked ? "done" : "todo" })
+            }
+            aria-label={`Mark ${task.title} done`}
+          />
+        </span>
+
+        <span className="task-body">
+          <span className="task-title">{task.title}</span>
+          {hasMeta && (
+            <span className="task-card-meta">
+              {task.milestone_title && (
+                <span className="task-meta-item">
+                  <MilestoneIcon size={12} aria-hidden="true" />
+                  {task.milestone_title}
+                </span>
+              )}
+              {duration && (
+                <span className="task-meta-item">
+                  <Clock3 size={12} aria-hidden="true" />
+                  {duration}
+                </span>
+              )}
+            </span>
+          )}
+        </span>
+
+        <span className="task-card-right">
+          {pillar && (
+            <span className="pillar-badge" style={{ borderColor: pillar.color ?? "#888" }}>
+              <span className="pillar-swatch" style={{ background: pillar.color ?? "#888" }} />
+              {pillar.name}
+            </span>
+          )}
+        </span>
       </div>
-      <div className="task-meta">
-        {task.due_date && (
-          <span className="due">
-            <CalendarDays size={13} /> {task.due_date.slice(0, 10)}
-          </span>
-        )}
-        {task.estimated_duration_min != null && (
-          <span className="est">
-            <Clock3 size={13} /> {task.estimated_duration_min}m
-          </span>
-        )}
-        {(task.is_urgent || task.is_important) && (
-          <span className="flags">
-            <Flag size={13} />
-            {task.is_urgent ? "Urgent" : ""}
-            {task.is_urgent && task.is_important ? " + " : ""}
-            {task.is_important ? "Important" : ""}
-          </span>
-        )}
-        {task.status === "done" && (
-          <span className="done-chip">
-            <CheckCircle2 size={13} /> Done
-          </span>
-        )}
+
+      <div
+        className="task-card-subtasks"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
+        <SubtaskList taskId={task.id} open={subtasksOpen} onOpenChange={setSubtasksOpen} />
       </div>
-      {!compact && (
-        <div className="task-timer-row">
-          <PlayCircle size={15} />
-          <Timer task={task} compact />
-        </div>
-      )}
     </div>
   );
 }

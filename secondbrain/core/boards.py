@@ -1,4 +1,4 @@
-"""Board reads: kanban (by status) and Eisenhower (by urgent x important)."""
+"""Board reads: kanban (by status) and impact/effort (by impact x effort)."""
 
 from __future__ import annotations
 
@@ -28,27 +28,41 @@ def get_kanban(conn: sqlite3.Connection, pillar: int | str | None = None) -> dic
     return cols
 
 
-def get_eisenhower(conn: sqlite3.Connection, pillar: int | str | None = None) -> dict:
-    """Tasks grouped into the four quadrants (archived/done excluded)."""
+def get_impact_effort(conn: sqlite3.Connection, pillar: int | str | None = None) -> dict:
+    """Tasks grouped into the four impact/effort quadrants (archived excluded).
+
+    Done tasks are INCLUDED so the matrix can show them dimmed/struck until the
+    user archives; each row carries `milestone_title` (LEFT JOIN) for the card.
+    """
     clause, params = _filter(conn, pillar)
-    extra = "status NOT IN ('archived','done')"
+    # _filter's clause references `pillar_id`; qualify to the tasks table so the
+    # milestones join stays unambiguous.
+    clause = clause.replace("pillar_id", "t.pillar_id")
+    extra = "t.status != 'archived'"
     where = f"{clause} AND {extra}" if clause else f"WHERE {extra}"
     rows = conn.execute(
-        f"SELECT * FROM tasks {where} ORDER BY sort_order, id", params
+        f"""
+        SELECT t.*, m.title AS milestone_title
+        FROM tasks t
+        LEFT JOIN milestones m ON m.id = t.milestone_id
+        {where}
+        ORDER BY t.sort_order, t.id
+        """,
+        params,
     ).fetchall()
     buckets = {
-        "urgent_important": [],
-        "not_urgent_important": [],
-        "urgent_not_important": [],
-        "not_urgent_not_important": [],
+        "high_impact_low_effort": [],
+        "high_impact_high_effort": [],
+        "low_impact_low_effort": [],
+        "low_impact_high_effort": [],
     }
     for r in rows:
-        if r["is_urgent"] and r["is_important"]:
-            buckets["urgent_important"].append(dict(r))
-        elif not r["is_urgent"] and r["is_important"]:
-            buckets["not_urgent_important"].append(dict(r))
-        elif r["is_urgent"] and not r["is_important"]:
-            buckets["urgent_not_important"].append(dict(r))
+        if r["is_impact"] and not r["is_effort"]:
+            buckets["high_impact_low_effort"].append(dict(r))
+        elif r["is_impact"] and r["is_effort"]:
+            buckets["high_impact_high_effort"].append(dict(r))
+        elif not r["is_impact"] and not r["is_effort"]:
+            buckets["low_impact_low_effort"].append(dict(r))
         else:
-            buckets["not_urgent_not_important"].append(dict(r))
+            buckets["low_impact_high_effort"].append(dict(r))
     return buckets

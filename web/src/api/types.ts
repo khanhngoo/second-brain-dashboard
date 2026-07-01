@@ -5,8 +5,7 @@
 
 export type TaskStatus = "todo" | "doing" | "done" | "archived";
 export type MilestoneStatus = "active" | "done" | "archived";
-export type SessionSource = "block" | "pomodoro" | "manual" | "adhd";
-export type TimerMode = "pomodoro" | "manual" | "adhd";
+export type SessionSource = "block" | "manual";
 export type BlockStatus = "planned" | "done" | "skipped";
 
 export interface Pillar {
@@ -47,15 +46,15 @@ export interface Task {
   title: string;
   description: string | null;
   status: TaskStatus;
-  is_urgent: number;
-  is_important: number;
+  is_impact: number;
+  is_effort: number;
   estimated_duration_min: number | null;
-  timer_mode: TimerMode | null;
   due_date: string | null;
   note_ref: string | null;
   sort_order: number;
   created_at: string;
   completed_at: string | null;
+  milestone_title?: string | null;
 }
 
 export interface ArchivedTask {
@@ -69,8 +68,8 @@ export interface ArchivedTask {
   title: string;
   description: string | null;
   status: "done";
-  is_urgent: number;
-  is_important: number;
+  is_impact: number;
+  is_effort: number;
   estimated_duration_min: number | null;
   actual_duration_min: number;
   due_date: string | null;
@@ -156,14 +155,14 @@ export interface Kanban {
   done: Task[];
 }
 
-export interface Eisenhower {
-  urgent_important: Task[];
-  not_urgent_important: Task[];
-  urgent_not_important: Task[];
-  not_urgent_not_important: Task[];
+export interface ImpactEffort {
+  high_impact_low_effort: Task[];
+  high_impact_high_effort: Task[];
+  low_impact_low_effort: Task[];
+  low_impact_high_effort: Task[];
 }
 
-export type Quadrant = keyof Eisenhower;
+export type Quadrant = keyof ImpactEffort;
 
 export interface PillarTimeRow {
   pillar_id: number;

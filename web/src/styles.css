@@ -74,19 +74,281 @@ button:disabled {
 
 .app { min-height: 100vh; }
 
+/* --- App shell: fixed side rail + scrolling workspace ------------------- */
+.app-shell {
+  display: grid;
+  grid-template-columns: 232px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 22px 16px;
+  background: var(--surface-soft);
+  border-right: 1px solid var(--hairline);
+}
+
+.side-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.side-link {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 500;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.side-link:hover {
+  background: var(--surface-card);
+  color: var(--ink);
+}
+
+.side-link.active {
+  background: var(--surface-cream-strong);
+  color: var(--ink);
+}
+
+.workspace {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .topbar {
   position: sticky;
   top: 0;
   z-index: 20;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
   min-height: 64px;
   padding: 12px 24px;
   background: rgba(250, 249, 245, 0.94);
   border-bottom: 1px solid var(--hairline);
   backdrop-filter: blur(12px);
+}
+
+.topbar-spacer { flex: 1; }
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 24px 0;
+}
+
+/* --- Workspace tab strip ----------------------------------------------- */
+.workspace-tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 4px;
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+}
+
+.workspace-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: var(--radius);
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.workspace-tab:hover { color: var(--ink); }
+
+.workspace-tab.active {
+  background: var(--canvas);
+  color: var(--ink);
+  box-shadow: var(--shadow-soft);
+}
+
+.placeholder-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 64px 24px;
+  border: 1px dashed var(--hairline);
+  border-radius: var(--radius-lg);
+  background: var(--surface-soft);
+}
+
+/* --- Collapsible subtasks ---------------------------------------------- */
+.task-card-subtasks {
+  margin-top: 10px;
+  border-top: 1px solid var(--hairline);
+  padding-top: 8px;
+}
+
+.subtask-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.subtask-trigger:hover { color: var(--ink); }
+
+.subtask-trigger .chev {
+  transition: transform 0.15s ease;
+}
+.subtask-trigger .chev.open {
+  transform: rotate(90deg);
+}
+
+.subtask-content {
+  padding: 6px 0 2px;
+}
+
+.subtask-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.subtask-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--body);
+  cursor: pointer;
+}
+
+.subtask-done {
+  text-decoration: line-through;
+  color: var(--muted-soft);
+}
+
+.subtask-add {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.subtask-add input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--canvas);
+}
+
+.empty.subtle {
+  font-size: 13px;
+  color: var(--muted-soft);
+  margin: 2px 0;
+}
+
+/* --- Session logger (start/end → duration) ----------------------------- */
+.drawer-section {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+}
+
+.drawer-section-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.session-logger {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.session-mode-toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-card);
+  border-radius: var(--radius);
+  align-self: flex-start;
+}
+
+.session-datetime {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.session-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.session-row .field-label {
+  width: 42px;
+  flex-shrink: 0;
+}
+
+.session-row input[type="time"] {
+  padding: 7px 10px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--canvas);
+}
+
+.date-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--canvas);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.date-trigger:hover { background: var(--surface-soft); }
+
+.session-duration {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.session-ok {
+  font-size: 13px;
+  color: var(--success);
+  font-weight: 500;
 }
 
 .brand {
@@ -134,15 +396,19 @@ button:disabled {
 }
 
 .top-action {
-  grid-column: 3;
+  white-space: nowrap;
 }
 
 .pillar-switcher {
-  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
+  gap: 6px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.pillar-switcher .filter-tab {
+  white-space: nowrap;
 }
 
 .filter-tab {
@@ -181,6 +447,12 @@ button:disabled {
 .view-stack {
   display: grid;
   gap: 24px;
+}
+
+/* Wide views (impact/effort matrix) break out past the 1220px content cap. */
+.view-stack.wide {
+  width: min(1600px, calc(100vw - 320px));
+  margin: 0 auto;
 }
 
 .view-heading {
@@ -393,6 +665,41 @@ textarea:focus {
   padding-top: 8px;
 }
 
+/* Task sheet: header + scrolling body + pinned footer. The SheetContent is a
+   fixed-height flex column (p-6, overflow-y-auto from the shadcn base); the body
+   takes the slack and scrolls so Subtasks/Log-time are always reachable. */
+.task-sheet {
+  gap: 0;
+  width: min(440px, 92vw);
+  max-width: none;
+}
+
+.task-sheet .sheet-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 12px -24px 0;
+  padding: 0 24px;
+}
+
+/* First section in the body has no top divider — the header already separates. */
+.task-sheet .sheet-body > .drawer-section:first-child,
+.task-sheet .drawer-form > .drawer-section:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.task-sheet .sheet-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin: 0 -24px -24px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--hairline);
+  background: var(--canvas);
+}
+
 .form-error {
   margin: 0;
   color: var(--error);
@@ -541,58 +848,138 @@ textarea:focus {
 }
 
 /* Task cards and timer */
+/* Stick card — a single compact clickable row. No left strip. */
 .task-card {
-  display: grid;
-  gap: 12px;
-  margin-bottom: 10px;
-  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 7px;
+  padding: 8px 10px;
   border: 1px solid var(--hairline);
-  border-left: 4px solid var(--muted-soft);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius);
   background: var(--canvas);
-  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease, opacity 0.12s ease;
 }
 
-.task-card-head {
+.task-card:hover {
+  border-color: var(--muted-soft);
+  box-shadow: var(--shadow-soft);
+  background: var(--surface-hover, #fbfaf6);
+}
+
+.task-card:focus-visible {
+  outline: 2px solid var(--primary, #cc785c);
+  outline-offset: 1px;
+}
+
+/* Top row: checkbox + title/meta body + pillar badge. */
+.task-card-main {
   display: flex;
-  justify-content: space-between;
-  align-items: start;
+  align-items: flex-start;
   gap: 12px;
+}
+
+.task-check {
+  display: flex;
+  align-items: center;
+  padding-top: 1px;
+}
+
+.task-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .task-title {
   color: var(--ink);
-  font-weight: 600;
-  line-height: 1.35;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.task-pillar {
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.task-meta {
+.task-card-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  color: var(--muted);
-  font-size: 12px;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--muted-soft);
 }
 
-.task-meta span {
+.task-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.task-card.done {
+  opacity: 0.55;
+}
+
+.task-card.done .task-title {
+  color: var(--muted-soft);
+  text-decoration: line-through;
+}
+
+.task-card-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  max-width: 45%;
+}
+
+.task-card-right .pillar-badge {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.subtask-icon {
+  color: var(--muted-soft);
+}
+
+/* Pillar badge — colored swatch + name, sits top-right of the stick. */
+.pillar-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  padding: 2px 8px;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  background: var(--canvas);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
-.flags,
-.done-chip {
-  color: var(--primary-active);
+.pillar-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--primary, #cc785c);
+  color: #fff;
+  font-size: 11px;
   font-weight: 600;
 }
-
-.done-chip { color: var(--success); }
 
 .status-select {
   width: auto;
@@ -750,52 +1137,7 @@ textarea:focus {
 }
 
 .cal-layout {
-  display: grid;
-  grid-template-columns: 290px minmax(0, 1fr);
-  gap: 18px;
-  align-items: start;
-}
-
-.schedule-rail {
-  position: sticky;
-  top: 120px;
-  display: grid;
-  gap: 12px;
-  padding: 16px;
-  border-radius: var(--radius-lg);
-  background: var(--surface-dark);
-  color: var(--on-dark);
-}
-
-.rail-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.rail-head h3 {
-  margin: 0;
-  color: var(--on-dark);
-  font-size: 15px;
-}
-
-.schedule-rail .task-card {
-  background: var(--surface-dark-elevated);
-  border-color: #35322e;
-  color: var(--on-dark);
-}
-
-.schedule-rail .task-title,
-.schedule-rail .timer .clock { color: var(--on-dark); }
-.schedule-rail .task-pillar,
-.schedule-rail .muted { color: var(--on-dark-soft); }
-
-.fc-task-draggable {
-  cursor: grab;
-}
-
-.fc-task-draggable:active {
-  cursor: grabbing;
+  display: block;
 }
 
 .full-calendar-shell {
@@ -1195,13 +1537,6 @@ textarea:focus {
   text-align: right;
 }
 
-.pillar-badge {
-  padding: 3px 9px;
-  border-radius: 999px;
-  color: #fff;
-  font-size: 12px;
-}
-
 /* Archive */
 .archive-view {
   color: var(--body);
@@ -1282,7 +1617,8 @@ textarea:focus {
   color: var(--body);
 }
 
-.archive-sort-btn {
+.archive-sort-btn,
+.data-table-sort {
   height: 30px;
   padding: 0 6px;
   color: var(--muted);
@@ -1346,7 +1682,8 @@ textarea:focus {
   vertical-align: -4px;
 }
 
-.archive-pagination {
+.archive-pagination,
+.data-table-pagination {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1356,34 +1693,41 @@ textarea:focus {
   color: var(--muted);
 }
 
-.archive-pagination > div {
+.archive-pagination > div,
+.data-table-pagination > div {
   display: flex;
   gap: 8px;
 }
 
 @media (max-width: 920px) {
-  .topbar {
-    grid-template-columns: 1fr auto;
-  }
-
-  .nav {
-    grid-column: 1 / -1;
-    justify-content: flex-start;
-    overflow-x: auto;
-  }
-
-  .top-action {
-    grid-column: 2;
-  }
-
-  .matrix,
-  .chart-grid,
-  .cal-layout {
+  .app-shell {
     grid-template-columns: 1fr;
   }
 
-  .schedule-rail {
+  .sidebar {
     position: static;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .sidebar .side-nav {
+    flex-direction: row;
+  }
+
+  .topbar {
+    flex-wrap: wrap;
+  }
+
+  .workspace-tabs {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  .matrix,
+  .chart-grid {
+    grid-template-columns: 1fr;
   }
 
   .milestone-head,

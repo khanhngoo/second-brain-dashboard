@@ -11,7 +11,7 @@ export const keys = {
   pillar: (slug: string) => ["pillar", slug] as const,
   milestones: (pillar?: string) => ["milestones", pillar ?? "all"] as const,
   kanban: (pillar?: string) => ["kanban", pillar ?? "all"] as const,
-  eisenhower: (pillar?: string) => ["eisenhower", pillar ?? "all"] as const,
+  impactEffort: (pillar?: string) => ["impact_effort", pillar ?? "all"] as const,
   pillarTime: (bucket: Bucket) => ["pillar_time", bucket] as const,
   archivedTasks: (pillar?: string, completedFrom?: string, completedTo?: string) =>
     ["archived_tasks", pillar ?? "all", completedFrom ?? "", completedTo ?? ""] as const,
@@ -36,8 +36,8 @@ export const useMilestones = (pillar?: string) =>
 export const useKanban = (pillar?: string) =>
   useQuery({ queryKey: keys.kanban(pillar), queryFn: () => api.getKanban(pillar) });
 
-export const useEisenhower = (pillar?: string) =>
-  useQuery({ queryKey: keys.eisenhower(pillar), queryFn: () => api.getEisenhower(pillar) });
+export const useImpactEffort = (pillar?: string) =>
+  useQuery({ queryKey: keys.impactEffort(pillar), queryFn: () => api.getImpactEffort(pillar) });
 
 export const usePillarTime = (bucket: Bucket) =>
   useQuery({ queryKey: keys.pillarTime(bucket), queryFn: () => api.getPillarTime(bucket) });
@@ -66,6 +66,18 @@ export function useSetTaskStatus() {
   return useMutation({
     mutationFn: ({ id, status }: { id: number; status: string }) =>
       api.setTaskStatus(id, status),
+    onSuccess: invalidate,
+  });
+}
+
+// Sweep every done task in the matrix into the archive. Client-side loop over
+// the impact/effort buckets (no dedicated endpoint) → status `archived`.
+export function useArchiveDone() {
+  const invalidate = useInvalidateAll();
+  return useMutation({
+    mutationFn: async (ids: number[]) => {
+      for (const id of ids) await api.setTaskStatus(id, "archived");
+    },
     onSuccess: invalidate,
   });
 }
