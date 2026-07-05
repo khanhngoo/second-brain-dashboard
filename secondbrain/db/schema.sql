@@ -5,7 +5,7 @@
 --   * sessions.voided         -- soft-void for skipped auto-logs (reversibility)
 --   * time_blocks.confirmed   -- morning-brief confirm state
 
-PRAGMA user_version = 3;
+PRAGMA user_version = 4;
 
 -- ---------------------------------------------------------------------------
 -- pillars  (the five fixed life pillars; rows are extensible, seed exactly 5)
@@ -21,11 +21,11 @@ CREATE TABLE IF NOT EXISTS pillars (
 );
 
 -- ---------------------------------------------------------------------------
--- milestones  (belong to one pillar; progress is DERIVED, never stored)
+-- milestones  (pillar-agnostic; a milestone's tasks may span many pillars.
+-- progress is DERIVED, never stored)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS milestones (
     id           INTEGER PRIMARY KEY,
-    pillar_id    INTEGER NOT NULL REFERENCES pillars(id) ON DELETE RESTRICT,
     title        TEXT NOT NULL,
     description  TEXT,
     status       TEXT NOT NULL DEFAULT 'active',   -- active / done / archived
@@ -36,9 +36,8 @@ CREATE TABLE IF NOT EXISTS milestones (
 );
 
 -- ---------------------------------------------------------------------------
--- tasks  (belong to a pillar; may belong to a milestone)
--- Invariant (enforced in core, not SQL): if milestone_id is set, pillar_id
--- must equal that milestone's pillar_id.
+-- tasks  (belong to a pillar; may belong to a milestone — independently, a
+-- milestone's tasks can each have a different pillar)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS tasks (
     id                     INTEGER PRIMARY KEY,
@@ -154,7 +153,6 @@ CREATE INDEX IF NOT EXISTS idx_blocks_task       ON time_blocks(task_id);
 CREATE INDEX IF NOT EXISTS idx_blocks_start      ON time_blocks(start_at);
 CREATE INDEX IF NOT EXISTS idx_blocks_status     ON time_blocks(status);
 CREATE INDEX IF NOT EXISTS idx_subtasks_task     ON subtasks(task_id);
-CREATE INDEX IF NOT EXISTS idx_milestones_pillar ON milestones(pillar_id);
 
 -- ---------------------------------------------------------------------------
 -- Derived views (docs/02)

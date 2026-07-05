@@ -65,8 +65,8 @@ export const getPillars = () => request<PillarRollup[]>("/pillars");
 export const getPillar = (slug: string) =>
   request<PillarWithMilestones>(`/pillars/${slug}`);
 
-export const listMilestones = (pillar?: string, status?: string) =>
-  request<Milestone[]>(`/milestones${qs({ pillar, status })}`);
+export const listMilestones = (status?: string) =>
+  request<Milestone[]>(`/milestones${qs({ status })}`);
 
 export const listTasks = (params: {
   pillar?: string;
@@ -122,7 +122,6 @@ export const setTaskStatus = (id: number, status: string) =>
   request<Task>(`/tasks/${id}/status`, { method: "POST", body: JSON.stringify({ status }) });
 
 export const createMilestone = (body: {
-  pillar: string | number;
   title: string;
   description?: string;
   target_date?: string;
@@ -130,6 +129,9 @@ export const createMilestone = (body: {
 
 export const updateMilestone = (id: number, fields: Partial<Milestone>) =>
   request<Milestone>(`/milestones/${id}`, { method: "PATCH", body: JSON.stringify({ fields }) });
+
+export const deleteMilestone = (id: number) =>
+  request<void>(`/milestones/${id}`, { method: "DELETE" });
 
 export const addSubtask = (taskId: number, title: string) =>
   request(`/tasks/${taskId}/subtasks`, { method: "POST", body: JSON.stringify({ title }) });
@@ -145,6 +147,19 @@ export const logSession = (body: {
   ended_at?: string;
   note?: string;
 }) => request("/sessions", { method: "POST", body: JSON.stringify(body) });
+
+// Sets a task's total logged time to exactly duration_min (voids prior
+// sessions and logs one replacement) — unlike logSession, which is additive.
+export const replaceSessions = (
+  taskId: number,
+  duration_min: number,
+  source?: string,
+  note?: string
+) =>
+  request(`/tasks/${taskId}/sessions`, {
+    method: "PATCH",
+    body: JSON.stringify({ duration_min, source, note }),
+  });
 
 export const createTimeBlock =(task_id: number, start_at: string, end_at: string) =>
   request<TimeBlock>("/time_blocks", {

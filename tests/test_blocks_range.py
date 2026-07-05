@@ -4,7 +4,7 @@ from secondbrain import core
 
 
 def test_range_overlap_and_ordering(seeded_db):
-    t = core.create_task(seeded_db, pillar="cracked_engineer", title="t")
+    t = core.create_task(seeded_db, pillar="skills", title="t")
     b1 = core.create_time_block(seeded_db, t["id"], "2026-06-20T09:00:00+00:00", "2026-06-20T10:00:00+00:00")
     b2 = core.create_time_block(seeded_db, t["id"], "2026-06-20T11:00:00+00:00", "2026-06-20T12:00:00+00:00")
     # outside the queried window
@@ -15,7 +15,7 @@ def test_range_overlap_and_ordering(seeded_db):
 
 
 def test_range_includes_done_and_skipped(seeded_db, frozen_clock):
-    t = core.create_task(seeded_db, pillar="cracked_engineer", title="t")
+    t = core.create_task(seeded_db, pillar="skills", title="t")
     b = core.create_time_block(seeded_db, t["id"], "2026-06-20T07:00:00+00:00", "2026-06-20T08:00:00+00:00")
     core.run_autolog_sweep(seeded_db)  # flips to done
     core.mark_block_skipped(seeded_db, b["id"])  # -> skipped

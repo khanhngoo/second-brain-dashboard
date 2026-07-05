@@ -1,8 +1,9 @@
 """Task reads + writes.
 
 Two rules enforced here:
-  * the pillar/milestone invariant (via resolve_task_pillar), on create AND
-    whenever update touches pillar/milestone;
+  * pillar resolution (via resolve_task_pillar), on create AND whenever
+    update touches pillar/milestone — milestones are pillar-agnostic, so this
+    only validates the pillar itself and that the milestone (if any) exists;
   * status is written ONLY by set_task_status — never by create_task/update_task
     (the session-vs-status split, docs/02 + docs/04).
 """
@@ -81,19 +82,14 @@ def update_task(conn: sqlite3.Connection, id: int, **fields) -> dict:
     if unknown:
         raise ValidationError(f"cannot update task field(s): {', '.join(sorted(unknown))}")
 
-    # Re-validate the invariant whenever pillar or milestone is touched. Only an
-    # *explicitly passed* pillar is treated as a constraint; a milestone-only
-    # move adopts the milestone's pillar (rather than conflicting with the old
-    # one). If neither is explicit, fall back to the task's current pillar.
+    # Milestones are pillar-agnostic — a milestone-only move keeps the task's
+    # current pillar; only an explicitly passed pillar_id changes it. Either
+    # way, re-resolve so a moved-to milestone is validated to exist.
     if "pillar_id" in fields or "milestone_id" in fields:
-        explicit_pillar = fields.get("pillar_id", None)
+        explicit_pillar = fields.get("pillar_id", current["pillar_id"])
         new_milestone = fields.get("milestone_id", current["milestone_id"])
-        if explicit_pillar is None and new_milestone is None:
-            constraint_pillar = current["pillar_id"]
-        else:
-            constraint_pillar = explicit_pillar
         fields["pillar_id"] = resolve_task_pillar(
-            conn, pillar=constraint_pillar, milestone_id=new_milestone
+            conn, pillar=explicit_pillar, milestone_id=new_milestone
         )
 
     sets, params = [], []
@@ -164,10 +160,10 @@ def list_archived_tasks(
     completed_from: str | None = None,
     completed_to: str | None = None,
 ) -> list[dict]:
-    """Completed task archive with display metadata and logged duration."""
+    """Full task log with display metadata and logged duration, any status."""
     from .validation import require_pillar
 
-    where = ["t.status = 'done'"]
+    where = []
     params = []
     if pillar is not None:
         where.append("t.pillar_id = ?")
@@ -179,6 +175,7 @@ def list_archived_tasks(
         where.append("t.completed_at IS NOT NULL AND t.completed_at <= ?")
         params.append(completed_to)
 
+    clause = ("WHERE " + " AND ".join(where)) if where else ""
     sql = f"""
         SELECT
             t.id,
@@ -204,7 +201,7 @@ def list_archived_tasks(
         JOIN pillars p ON p.id = t.pillar_id
         LEFT JOIN milestones m ON m.id = t.milestone_id
         LEFT JOIN sessions s ON s.task_id = t.id
-        WHERE {" AND ".join(where)}
+        {clause}
         GROUP BY t.id
         ORDER BY t.completed_at DESC, t.id DESC
     """

@@ -22,6 +22,9 @@ calendar = [
     "google-auth-oauthlib>=1",
     "keyring>=24",
 ]
+telegram = [
+    "python-telegram-bot>=20",
+]
 
 [project.scripts]
 sb = "secondbrain.cli:app"

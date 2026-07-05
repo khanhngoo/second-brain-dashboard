@@ -34,7 +34,7 @@ class MockProvider(CalendarProvider):
 
 
 def _task(conn):
-    return core.create_task(conn, pillar="cracked_engineer", title="deep work")
+    return core.create_task(conn, pillar="skills", title="deep work")
 
 
 def test_no_provider_behaves_like_p2(seeded_db):

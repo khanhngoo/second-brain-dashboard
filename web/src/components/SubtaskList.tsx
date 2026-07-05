@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { addSubtask, toggleSubtask } from "../api/client";
 import { useTask, useInvalidateAll } from "../hooks/queries";
 import { Checkbox } from "./ui/checkbox";
+import { Input } from "./ui/input";
 import {
   Collapsible,
   CollapsibleContent,
@@ -71,7 +72,7 @@ export function SubtaskList({
             if (subtaskTitle.trim()) add.mutate(subtaskTitle.trim());
           }}
         >
-          <input
+          <Input
             value={subtaskTitle}
             onChange={(e) => setSubtaskTitle(e.target.value)}
             placeholder="Add subtask"

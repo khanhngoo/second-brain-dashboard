@@ -10,7 +10,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { useKanban, useSetTaskStatus } from "../hooks/queries";
+import { useKanban, useMarkTaskDone, useSetTaskStatus } from "../hooks/queries";
 import { usePillarFilter } from "../state/pillarFilter";
 import { TaskCard } from "../components/TaskCard";
 import type { Kanban, Task, TaskStatus } from "../api/types";
@@ -66,6 +66,7 @@ export function KanbanView() {
   const { apiPillar } = usePillarFilter();
   const { data: kanban, isLoading } = useKanban(apiPillar);
   const setStatus = useSetTaskStatus();
+  const markDone = useMarkTaskDone();
   const [active, setActive] = useState<Task | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -82,6 +83,14 @@ export function KanbanView() {
     const newStatus = String(e.over.id) as TaskStatus;
     const fromStatus = e.active.data.current?.status as TaskStatus | undefined;
     if (fromStatus === newStatus) return;
+    if (newStatus === "done") {
+      const all = kanban ? [...kanban.todo, ...kanban.doing, ...kanban.done] : [];
+      const task = all.find((t) => t.id === id);
+      if (task) {
+        markDone(task);
+        return;
+      }
+    }
     setStatus.mutate({ id, status: newStatus });
   }
 
@@ -96,7 +105,7 @@ export function KanbanView() {
             <Column key={c.key} status={c.key} label={c.label} tasks={kanban[c.key]} />
           ))}
         </div>
-        <DragOverlay>{active ? <TaskCard task={active} /> : null}</DragOverlay>
+        <DragOverlay>{active ? <TaskCard task={active} showSubtasks={false} /> : null}</DragOverlay>
       </DndContext>
     </div>
   );

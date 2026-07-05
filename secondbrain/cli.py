@@ -25,10 +25,15 @@ def init_db() -> None:
 
 
 @app.command()
-def seed(reset: bool = typer.Option(False, "--reset", help="Wipe all tables first.")) -> None:
-    """Seed the five pillars and a few sample milestones/tasks."""
+def seed(
+    reset: bool = typer.Option(False, "--reset", help="Wipe all tables first."),
+    with_samples: bool = typer.Option(
+        True, "--with-samples/--no-with-samples", help="Seed sample milestones/tasks."
+    ),
+) -> None:
+    """Seed the pillars and, optionally, a few sample milestones/tasks."""
     conn = get_conn()
-    seed_data(conn, reset=reset)
+    seed_data(conn, reset=reset, with_samples=with_samples)
     n = conn.execute("SELECT COUNT(*) FROM pillars").fetchone()[0]
     typer.echo(f"seeded {n} pillars at {config.db_path()}")
 
@@ -58,6 +63,14 @@ def serve(
 
     bootstrap_calendar(get_conn())  # register a provider if an account is connected
     uvicorn.run("secondbrain.api.app:app", host=host, port=port, reload=reload)
+
+
+@app.command()
+def telegram() -> None:
+    """Run the Telegram bot gateway (polling)."""
+    from .telegram.bot import run_gateway
+
+    run_gateway(get_conn())
 
 
 def bootstrap_calendar(conn) -> None:

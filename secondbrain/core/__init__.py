@@ -16,7 +16,7 @@ from .blocks import (
     run_autolog_sweep,
 )
 from .blocks import list_blocks_range
-from .boards import get_eisenhower, get_kanban
+from .boards import get_impact_effort, get_kanban
 from .brief import get_today_brief
 from .calendar_accounts import (
     add_calendar_account,
@@ -25,10 +25,10 @@ from .calendar_accounts import (
 )
 from .calsync import calendar_status, flush_calendar_outbox, run_calendar_sync
 from .events import list_external_events, upsert_external_events
-from .milestones import create_milestone, list_milestones, update_milestone
+from .milestones import create_milestone, delete_milestone, list_milestones, update_milestone
 from .pillars import get_pillar, get_pillars
 from .rawquery import query
-from .sessions import log_session, start_timer, stop_timer
+from .sessions import log_session, replace_sessions
 from .subtasks import add_subtask, toggle_subtask
 from .tasks import (
     create_task,
@@ -49,7 +49,7 @@ __all__ = [
     "list_archived_tasks",
     "get_task",
     "get_kanban",
-    "get_eisenhower",
+    "get_impact_effort",
     "get_pillar_time",
     "list_external_events",
     "list_blocks_range",
@@ -59,12 +59,12 @@ __all__ = [
     "set_task_status",
     "create_milestone",
     "update_milestone",
+    "delete_milestone",
     "add_subtask",
     "toggle_subtask",
     # writes — time
     "log_session",
-    "start_timer",
-    "stop_timer",
+    "replace_sessions",
     # writes — scheduling
     "create_time_block",
     "move_time_block",

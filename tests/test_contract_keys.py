@@ -26,7 +26,7 @@ BRIEF_KEYS = {
 }
 PILLAR_ROLLUP_KEYS = {
     "id", "slug", "name", "description", "color", "sort_order", "created_at",
-    "active_milestones", "open_tasks", "minutes_this_week",
+    "open_tasks", "minutes_this_week",
 }
 KANBAN_KEYS = {"todo", "doing", "done"}
 IMPACT_EFFORT_KEYS = {
@@ -39,8 +39,8 @@ PILLAR_TIME_KEYS = {"pillar_id", "slug", "name", "bucket", "minutes"}
 @pytest.fixture
 def populated(db):
     seed_pillars(db)
-    m = core.create_milestone(db, pillar="cracked_engineer", title="M")
-    t = core.create_task(db, pillar="cracked_engineer", title="t", milestone=m["id"])
+    m = core.create_milestone(db, title="M")
+    t = core.create_task(db, pillar="skills", title="t", milestone=m["id"])
     core.log_session(db, t["id"], 40, started_at="2026-06-20T08:00:00+00:00")
     return db
 

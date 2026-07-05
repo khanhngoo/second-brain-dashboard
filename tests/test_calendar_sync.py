@@ -72,7 +72,7 @@ def test_echo_loop_excludes_our_pushed_block(seeded_db, provider_cleanup):
          "start_at": "2026-06-20T11:00:00+00:00", "end_at": "2026-06-20T12:00:00+00:00"},
     ])
     set_provider(p)
-    t = core.create_task(seeded_db, pillar="cracked_engineer", title="x")
+    t = core.create_task(seeded_db, pillar="skills", title="x")
     core.create_time_block(seeded_db, t["id"], "2026-06-20T09:00:00+00:00", "2026-06-20T10:00:00+00:00")
 
     core.run_calendar_sync(seeded_db, "2026-06-20T00:00:00+00:00", "2026-06-20T23:59:00+00:00")

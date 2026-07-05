@@ -9,7 +9,7 @@ describe("TodayView", () => {
   it("renders the week pillar strip and the unconfirmed block", async () => {
     renderWithProviders(<TodayView />);
     expect(await screen.findByText(/Today — 2026-06-20/)).toBeInTheDocument();
-    expect(screen.getByText("Cracked Engineer")).toBeInTheDocument();
+    expect(screen.getByText("Skills")).toBeInTheDocument();
     expect(screen.getByText(/Block #7/)).toBeInTheDocument();
   });
 

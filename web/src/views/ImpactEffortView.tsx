@@ -13,17 +13,18 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { updateTask } from "../api/client";
-import { useEisenhower, useInvalidateAll } from "../hooks/queries";
+import { useImpactEffort, useInvalidateAll } from "../hooks/queries";
 import { usePillarFilter } from "../state/pillarFilter";
 import { useTaskDrawer } from "../state/taskDrawer";
 import { TaskCard } from "../components/TaskCard";
+import { usePillarLookup } from "../components/PillarBadge";
 import type { Quadrant, Task } from "../api/types";
 
-const QUADRANTS: { key: Quadrant; label: string; tone: string; flags: { is_urgent: number; is_important: number } }[] = [
-  { key: "urgent_important", label: "Do now", tone: "Urgent + important", flags: { is_urgent: 1, is_important: 1 } },
-  { key: "not_urgent_important", label: "Schedule", tone: "Important, not urgent", flags: { is_urgent: 0, is_important: 1 } },
-  { key: "urgent_not_important", label: "Minimize", tone: "Urgent, not important", flags: { is_urgent: 1, is_important: 0 } },
-  { key: "not_urgent_not_important", label: "Drop later", tone: "Neither urgent nor important", flags: { is_urgent: 0, is_important: 0 } },
+const QUADRANTS: { key: Quadrant; label: string; tone: string; flags: { is_impact: number; is_effort: number } }[] = [
+  { key: "high_impact_low_effort", label: "Quick Wins", tone: "High impact · low effort", flags: { is_impact: 1, is_effort: 0 } },
+  { key: "high_impact_high_effort", label: "Major Projects", tone: "High impact · high effort", flags: { is_impact: 1, is_effort: 1 } },
+  { key: "low_impact_low_effort", label: "Fill-ins", tone: "Low impact · low effort", flags: { is_impact: 0, is_effort: 0 } },
+  { key: "low_impact_high_effort", label: "Thankless", tone: "Low impact · high effort", flags: { is_impact: 0, is_effort: 1 } },
 ];
 
 function DraggableCard({ task }: { task: Task }) {
@@ -60,13 +61,17 @@ function Quad({ q, tasks, onAdd }: { q: (typeof QUADRANTS)[number]; tasks: Task[
   );
 }
 
-export function EisenhowerView() {
-  const { apiPillar } = usePillarFilter();
+export function ImpactEffortView() {
+  const { matches } = usePillarFilter();
   const { openTaskDrawer } = useTaskDrawer();
-  const { data, isLoading } = useEisenhower(apiPillar);
+  const lookup = usePillarLookup();
+  const { data, isLoading } = useImpactEffort();
   const invalidate = useInvalidateAll();
+
+  // Client-side pillar filter: keep only cards whose pillar slug is selected.
+  const keep = (t: Task) => matches(lookup(t.pillar_id)?.slug);
   const move = useMutation({
-    mutationFn: ({ id, flags }: { id: number; flags: { is_urgent: number; is_important: number } }) =>
+    mutationFn: ({ id, flags }: { id: number; flags: { is_impact: number; is_effort: number } }) =>
       updateTask(id, flags),
     onSuccess: invalidate,
   });
@@ -90,10 +95,10 @@ export function EisenhowerView() {
   if (isLoading || !data) return <p className="muted">Loading matrix…</p>;
 
   return (
-    <div className="view-stack">
+    <div className="view-stack wide">
       <div className="view-heading">
         <p className="eyebrow">Decision board</p>
-        <h2 className="view-title">Eisenhower Matrix</h2>
+        <h2 className="view-title">Impact / Effort Matrix</h2>
       </div>
       <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
         <div className="matrix">
@@ -101,12 +106,11 @@ export function EisenhowerView() {
             <Quad
               key={q.key}
               q={q}
-              tasks={data[q.key]}
+              tasks={data[q.key].filter(keep)}
               onAdd={() =>
                 openTaskDrawer({
-                  pillar: apiPillar,
-                  is_urgent: Boolean(q.flags.is_urgent),
-                  is_important: Boolean(q.flags.is_important),
+                  is_impact: Boolean(q.flags.is_impact),
+                  is_effort: Boolean(q.flags.is_effort),
                 })
               }
             />

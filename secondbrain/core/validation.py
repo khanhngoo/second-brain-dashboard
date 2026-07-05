@@ -1,8 +1,7 @@
 """Shared validation — the one place invariants and guards live.
 
-Adapters never re-check anything here. The pillar/milestone invariant
-(docs/02:68) lives in ``resolve_task_pillar`` and is the single source of truth
-for that rule.
+Adapters never re-check anything here. A task's pillar resolution lives in
+``resolve_task_pillar`` and is the single source of truth for that rule.
 """
 
 from __future__ import annotations
@@ -14,11 +13,10 @@ from ..errors import NotFoundError, ValidationError
 # Enum vocabularies (docs/02, docs/03).
 TASK_STATUSES = ("todo", "doing", "done", "archived")
 MILESTONE_STATUSES = ("active", "done", "archived")
-SESSION_SOURCES = ("block", "pomodoro", "manual", "adhd")
-TIMER_MODES = ("pomodoro", "manual", "adhd")
+SESSION_SOURCES = ("block", "manual")
 BLOCK_STATUSES = ("planned", "done", "skipped")
-QUADRANTS = ("urgent_important", "not_urgent_important",
-             "urgent_not_important", "not_urgent_not_important")
+QUADRANTS = ("high_impact_low_effort", "high_impact_high_effort",
+             "low_impact_low_effort", "low_impact_high_effort")
 
 
 def check_enum(value: str, allowed: tuple[str, ...], field: str) -> str:
@@ -86,33 +84,25 @@ def resolve_task_pillar(
     pillar: int | str | None,
     milestone_id: int | None,
 ) -> int:
-    """Return the pillar_id a task must have, enforcing the invariant.
+    """Return the pillar_id a task must have.
 
-    docs/02:68 — if ``milestone_id`` is set, the task's pillar MUST equal the
-    milestone's pillar. If both are given and conflict, raise ValidationError.
-    If neither is given, raise (a task always needs a pillar).
+    Milestones are pillar-agnostic (a milestone's tasks may each belong to a
+    different pillar), so a task's pillar always comes from ``pillar`` — the
+    milestone is only checked for existence. A task always needs a pillar.
     """
     if milestone_id is not None:
-        m = require_milestone(conn, milestone_id)
-        if pillar is not None:
-            p = require_pillar(conn, pillar)
-            if p["id"] != m["pillar_id"]:
-                raise ValidationError(
-                    "pillar/milestone mismatch: task pillar "
-                    f"{p['id']} != milestone {milestone_id}'s pillar {m['pillar_id']}"
-                )
-        return m["pillar_id"]
+        require_milestone(conn, milestone_id)
     if pillar is None:
-        raise ValidationError("a task requires a pillar (or a milestone)")
+        raise ValidationError("a task requires a pillar")
     return require_pillar(conn, pillar)["id"]
 
 
 def quadrant_to_flags(quadrant: str) -> tuple[int, int]:
-    """Decode an Eisenhower quadrant into (is_urgent, is_important)."""
+    """Decode an impact/effort quadrant into (is_impact, is_effort)."""
     check_enum(quadrant, QUADRANTS, "quadrant")
     return {
-        "urgent_important": (1, 1),
-        "not_urgent_important": (0, 1),
-        "urgent_not_important": (1, 0),
-        "not_urgent_not_important": (0, 0),
+        "high_impact_low_effort": (1, 0),
+        "high_impact_high_effort": (1, 1),
+        "low_impact_low_effort": (0, 0),
+        "low_impact_high_effort": (0, 1),
     }[quadrant]

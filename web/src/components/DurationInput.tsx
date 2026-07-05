@@ -7,16 +7,31 @@ const PRESETS = [
 ];
 
 export function formatDuration(minutes: number) {
-  if (minutes < 60) return `${minutes}m`;
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+  if (h === 0) return `${m}m`;
+  return m === 0 ? `${h}h` : `${h}h${m}`;
 }
 
 export function parseDuration(value: string): number | null {
   const clean = value.trim().toLowerCase();
   if (!clean) return null;
   if (/^\d+$/.test(clean)) return Number(clean);
+
+  const colonMatch = clean.match(/^(\d+):(\d{1,2})$/);
+  if (colonMatch) {
+    const h = Number(colonMatch[1]);
+    const m = Number(colonMatch[2]);
+    return Math.max(0, h * 60 + m);
+  }
+
+  // "1h30" — hours-minutes shorthand with no unit on the trailing minutes.
+  const shorthandMatch = clean.match(/^(\d+)h(\d{1,2})$/);
+  if (shorthandMatch) {
+    const h = Number(shorthandMatch[1]);
+    const m = Number(shorthandMatch[2]);
+    return Math.max(0, h * 60 + m);
+  }
 
   let total = 0;
   let matched = false;
@@ -71,7 +86,7 @@ export function DurationInput({
           const next = parseDuration(e.target.value);
           setText(formatDuration(next ?? value));
         }}
-        placeholder="45m or 1h 30m"
+        placeholder="1h30 or 45m"
       />
     </div>
   );

@@ -2,18 +2,11 @@ import { useEffect, useState } from "react";
 import type { Task } from "../api/types";
 import { usePillarLookup } from "./PillarBadge";
 import { Clock3, Milestone as MilestoneIcon } from "lucide-react";
-import { useSetTaskStatus } from "../hooks/queries";
+import { useMarkTaskDone, useSetTaskStatus } from "../hooks/queries";
 import { useTaskDrawer } from "../state/taskDrawer";
 import { Checkbox } from "./ui/checkbox";
 import { SubtaskList } from "./SubtaskList";
-
-function formatDuration(min: number | null | undefined): string | null {
-  if (min == null || min === 0) return null;
-  if (min < 60) return `${min}m`;
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return m ? `${h}h ${m}m` : `${h}h`;
-}
+import { formatDuration } from "./DurationInput";
 
 // Compact "stick" task row: checkbox + title, a muted meta line (milestone +
 // duration), pillar badge top-right, and an inline collapsible subtask panel.
@@ -23,6 +16,7 @@ function formatDuration(min: number | null | undefined): string | null {
 export function TaskCard({ task }: { task: Task; showSubtasks?: boolean }) {
   const lookup = usePillarLookup();
   const status = useSetTaskStatus();
+  const markDone = useMarkTaskDone();
   const { openTaskDrawer } = useTaskDrawer();
   const pillar = lookup(task.pillar_id);
   const done = task.status === "done";
@@ -33,7 +27,7 @@ export function TaskCard({ task }: { task: Task; showSubtasks?: boolean }) {
     if (done) setSubtasksOpen(false);
   }, [done]);
 
-  const duration = formatDuration(task.actual_duration_min);
+  const duration = task.actual_duration_min ? formatDuration(task.actual_duration_min) : null;
   const hasMeta = Boolean(task.milestone_title) || Boolean(duration);
 
   return (
@@ -55,7 +49,7 @@ export function TaskCard({ task }: { task: Task; showSubtasks?: boolean }) {
             checked={done}
             disabled={status.isPending}
             onCheckedChange={(checked) =>
-              status.mutate({ id: task.id, status: checked ? "done" : "todo" })
+              checked ? markDone(task) : status.mutate({ id: task.id, status: "todo" })
             }
             aria-label={`Mark ${task.title} done`}
           />

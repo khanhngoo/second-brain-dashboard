@@ -59,7 +59,6 @@ class StatusBody(BaseModel):
 
 
 class CreateMilestoneBody(BaseModel):
-    pillar: str | int
     title: str
     description: str | None = None
     target_date: str | None = None
@@ -75,6 +74,12 @@ class LogSessionBody(BaseModel):
     source: str = "manual"
     started_at: str | None = None
     ended_at: str | None = None
+    note: str | None = None
+
+
+class ReplaceSessionsBody(BaseModel):
+    duration_min: int
+    source: str = "manual"
     note: str | None = None
 
 
@@ -115,8 +120,8 @@ def pillar(slug: str):
 
 
 @app.get("/milestones")
-def milestones(pillar: str | None = None, status: str | None = None):
-    return core.list_milestones(_conn(), pillar, status)
+def milestones(status: str | None = None):
+    return core.list_milestones(_conn(), status)
 
 
 @app.get("/tasks")
@@ -197,6 +202,11 @@ def update_milestone(id: int, body: UpdateFieldsBody):
     return core.update_milestone(_conn(), id, **body.fields)
 
 
+@app.delete("/milestones/{id}", status_code=204)
+def delete_milestone(id: int):
+    core.delete_milestone(_conn(), id)
+
+
 @app.post("/tasks/{task_id}/subtasks")
 def add_subtask(task_id: int, body: SubtaskBody):
     return core.add_subtask(_conn(), task_id, body.title)
@@ -213,6 +223,11 @@ def log_session(body: LogSessionBody):
         _conn(), body.task_id, body.duration_min, body.source,
         body.started_at, body.ended_at, body.note,
     )
+
+
+@app.patch("/tasks/{id}/sessions")
+def replace_sessions(id: int, body: ReplaceSessionsBody):
+    return core.replace_sessions(_conn(), id, body.duration_min, body.source, body.note)
 
 
 @app.post("/time_blocks")

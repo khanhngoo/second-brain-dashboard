@@ -37,8 +37,8 @@ def get_pillar(slug: str) -> dict:
 
 
 @mcp.tool()
-def list_milestones(pillar: str | int | None = None, status: str | None = None) -> list[dict]:
-    return core.list_milestones(_conn(), pillar, status)
+def list_milestones(status: str | None = None) -> list[dict]:
+    return core.list_milestones(_conn(), status)
 
 
 @mcp.tool()
@@ -115,19 +115,23 @@ def set_task_status(id: int, status: str) -> dict:
 
 @mcp.tool()
 def create_milestone(
-    pillar: str | int,
     title: str,
     description: str | None = None,
     target_date: str | None = None,
 ) -> dict:
     return core.create_milestone(
-        _conn(), pillar=pillar, title=title, description=description, target_date=target_date
+        _conn(), title=title, description=description, target_date=target_date
     )
 
 
 @mcp.tool()
 def update_milestone(id: int, fields: dict) -> dict:
     return core.update_milestone(_conn(), id, **fields)
+
+
+@mcp.tool()
+def delete_milestone(id: int) -> None:
+    core.delete_milestone(_conn(), id)
 
 
 @mcp.tool()

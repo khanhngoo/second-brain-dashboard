@@ -27,7 +27,6 @@ import {
 import {
   createTimeBlock,
   deleteTimeBlock,
-  getCalendarStatus,
   getPillars,
   getTask,
   listExternalEvents,
@@ -42,6 +41,8 @@ import { useTaskDrawer } from "../state/taskDrawer";
 import { useBlockDrawer } from "../state/blockDrawer";
 import { usePillarFilter } from "../state/pillarFilter";
 import type { Task } from "../api/types";
+import { formatDuration } from "../components/DurationInput";
+import { sumBlockMinutes, TimeProgressDonut } from "../components/TimeProgressDonut";
 
 const FALLBACK_DURATION_MIN = 60;
 const NEUTRAL_BLOCK_COLOR = "#8e8b82";
@@ -175,10 +176,6 @@ export function CalendarView() {
     enabled: detailPopover?.kind === "block" && detailPopover.taskId != null,
   });
 
-  const { data: calStatus } = useQuery({
-    queryKey: keys.calendarStatus(),
-    queryFn: getCalendarStatus,
-  });
   const sync = useMutation({ mutationFn: syncCalendar, onSuccess: invalidate });
 
   const create = useMutation({
@@ -206,6 +203,14 @@ export function CalendarView() {
 
   const blockById = useMemo(() => {
     return new Map((blocks ?? []).map((block) => [block.id, block]));
+  }, [blocks]);
+
+  const scheduledMinByTask = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const block of blocks ?? []) {
+      map.set(block.task_id, (map.get(block.task_id) ?? 0) + sumBlockMinutes([block]));
+    }
+    return map;
   }, [blocks]);
 
   const pillarById = useMemo(() => {
@@ -238,6 +243,8 @@ export function CalendarView() {
           taskId: block.task_id,
           taskStatus: task?.status,
           pillarColor: color,
+          spentMin: task?.actual_duration_min ?? 0,
+          scheduledMin: scheduledMinByTask.get(block.task_id) ?? 0,
         },
       };
     });
@@ -256,7 +263,7 @@ export function CalendarView() {
     }));
 
     return [...externalEvents, ...localBlocks];
-  }, [blocks, events, pillarById, taskById]);
+  }, [blocks, events, pillarById, taskById, scheduledMinByTask]);
 
   function handleDatesSet(arg: DatesSetArg) {
     setRange({ start: toLocalIso(arg.start), end: toLocalIso(arg.end) });
@@ -373,6 +380,8 @@ export function CalendarView() {
     const blockId = arg.event.extendedProps.blockId as number | undefined;
     const taskId = arg.event.extendedProps.taskId as number | undefined;
     const taskStatus = arg.event.extendedProps.taskStatus as string | undefined;
+    const spentMin = arg.event.extendedProps.spentMin as number | undefined;
+    const scheduledMin = arg.event.extendedProps.scheduledMin as number | undefined;
     const isLocalBlock = arg.event.extendedProps.kind === "block" && blockId != null;
 
     return (
@@ -380,6 +389,12 @@ export function CalendarView() {
         <div className="fc-event-main-text">
           <span className="fc-event-time-text">{arg.timeText}</span>
           <span className="fc-event-title-text">{arg.event.title}</span>
+          {isLocalBlock && !!scheduledMin && (
+            <span className="fc-event-progress">
+              <TimeProgressDonut spentMin={spentMin ?? 0} scheduledMin={scheduledMin} size={16} />
+              {formatDuration(spentMin ?? 0)} / {formatDuration(scheduledMin)}
+            </span>
+          )}
         </div>
         {isLocalBlock && (
           <div className="fc-event-actions">
@@ -431,18 +446,18 @@ export function CalendarView() {
           <p className="eyebrow">Schedule work</p>
           <h2 className="view-title">Calendar</h2>
         </div>
-        <span className="date-chip"><CalendarClock size={16} /> {formatRangeLabel(range.start, range.end)}</span>
-      </div>
-      <div className="calendar-status">
-        <span className="muted">
-          {calStatus?.enabled
-            ? `Calendar connected: ${calStatus.accounts.map((a) => a.account_email).join(", ")}`
-            : "No calendar connected (run `sb calendar connect`). Blocks stay local."}
-        </span>
-        <button className="btn secondary icon-label" disabled={!calStatus?.enabled} onClick={() => sync.mutate()}>
-          <RefreshCw size={15} />
-          {sync.isPending ? "Syncing..." : "Sync now"}
-        </button>
+        <div className="cal-heading-actions">
+          <span className="date-chip"><CalendarClock size={16} /> {formatRangeLabel(range.start, range.end)}</span>
+          <button
+            className={sync.isPending ? "icon-btn spinning" : "icon-btn"}
+            type="button"
+            aria-label="Sync calendar"
+            title="Sync calendar"
+            onClick={() => sync.mutate()}
+          >
+            <RefreshCw size={15} />
+          </button>
+        </div>
       </div>
       <div className="cal-layout">
         <div className="full-calendar-shell">

@@ -24,15 +24,15 @@ export const sampleBrief: TodayBrief = {
     },
   ],
   week_pillar_minutes: [
-    { pillar_id: 4, slug: "cracked_engineer", name: "Cracked Engineer", minutes: 40 },
+    { pillar_id: 4, slug: "skills", name: "Skills", minutes: 40 },
   ],
 };
 
 export const samplePillars: PillarRollup[] = [
   {
-    id: 4, slug: "cracked_engineer", name: "Cracked Engineer", description: null,
+    id: 4, slug: "skills", name: "Skills", description: null,
     color: "#0984E3", sort_order: 3, created_at: "2026-06-20T00:00:00+00:00",
-    active_milestones: 1, open_tasks: 2, minutes_this_week: 40,
+    open_tasks: 2, minutes_this_week: 40,
   },
 ];
 
@@ -51,8 +51,8 @@ export const sampleArchivedTasks: ArchivedTask[] = [
   {
     id: 5,
     pillar_id: 4,
-    pillar_slug: "cracked_engineer",
-    pillar_name: "Cracked Engineer",
+    pillar_slug: "skills",
+    pillar_name: "Skills",
     pillar_color: "#0984E3",
     milestone_id: 2,
     milestone_title: "Ship dashboard",
@@ -71,8 +71,8 @@ export const sampleArchivedTasks: ArchivedTask[] = [
   {
     id: 6,
     pillar_id: 4,
-    pillar_slug: "cracked_engineer",
-    pillar_name: "Cracked Engineer",
+    pillar_slug: "skills",
+    pillar_name: "Skills",
     pillar_color: "#0984E3",
     milestone_id: null,
     milestone_title: null,

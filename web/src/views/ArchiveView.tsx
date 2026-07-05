@@ -197,7 +197,7 @@ export function ArchiveView() {
         <div className="archive-summary" aria-label="Archive summary">
           <span>
             <Archive size={15} />
-            {filtered.length} done
+            {filtered.length} tasks
           </span>
           <span>
             <TimerReset size={15} />

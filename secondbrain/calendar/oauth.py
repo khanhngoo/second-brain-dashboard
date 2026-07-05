@@ -12,8 +12,11 @@ import os
 
 KEYRING_SERVICE = "secondbrain"
 # Google Calendar: read existing events + write events on the chosen calendar.
+# userinfo.email is needed to key the stored token/account by the account's email.
 SCOPES = ["https://www.googleapis.com/auth/calendar.events",
-          "https://www.googleapis.com/auth/calendar.readonly"]
+          "https://www.googleapis.com/auth/calendar.readonly",
+          "https://www.googleapis.com/auth/userinfo.email",
+          "openid"]
 
 # Path to the OAuth client secrets JSON (downloaded from Google Cloud console).
 CLIENT_SECRETS_ENV = "SECONDBRAIN_GOOGLE_CLIENT_SECRETS"

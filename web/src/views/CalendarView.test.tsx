@@ -1,5 +1,6 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { format } from "date-fns";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { CalendarView } from "./CalendarView";
@@ -20,14 +21,15 @@ describe("CalendarView", () => {
           {
             id: 12,
             task_id: 1,
-            start_at: "2026-06-23T09:00:00",
-            end_at: "2026-06-23T10:00:00",
+            // Dates must fall in the currently visible listWeek range, so use today.
+            start_at: `${format(new Date(), "yyyy-MM-dd")}T09:00:00`,
+            end_at: `${format(new Date(), "yyyy-MM-dd")}T10:00:00`,
             status: "planned",
             auto_logged: 0,
             confirmed: 0,
             calendar_provider: null,
             calendar_event_id: null,
-            created_at: "2026-06-23T08:00:00",
+            created_at: `${format(new Date(), "yyyy-MM-dd")}T08:00:00`,
           },
         ]),
       ),

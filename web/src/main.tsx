@@ -6,6 +6,8 @@ import { App } from "./App";
 import { PillarFilterProvider } from "./state/pillarFilter";
 import { TaskDrawerProvider } from "./state/taskDrawer";
 import { BlockDrawerProvider } from "./state/blockDrawer";
+import { DurationPromptProvider } from "./state/durationPrompt";
+import { DurationPromptDialog } from "./components/DurationPromptDialog";
 import "./styles.css";
 
 const queryClient = new QueryClient({
@@ -19,7 +21,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <PillarFilterProvider>
           <BlockDrawerProvider>
             <TaskDrawerProvider>
-              <App />
+              <DurationPromptProvider>
+                <App />
+                <DurationPromptDialog />
+              </DurationPromptProvider>
             </TaskDrawerProvider>
           </BlockDrawerProvider>
         </PillarFilterProvider>

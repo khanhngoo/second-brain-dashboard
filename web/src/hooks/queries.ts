@@ -3,16 +3,18 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "../api/client";
-import type { Bucket } from "../api/types";
+import type { Bucket, Task } from "../api/types";
+import { useDurationPrompt } from "../state/durationPrompt";
 
 export const keys = {
   brief: (date?: string) => ["today_brief", date ?? "today"] as const,
   pillars: () => ["pillars"] as const,
   pillar: (slug: string) => ["pillar", slug] as const,
-  milestones: (pillar?: string) => ["milestones", pillar ?? "all"] as const,
+  milestones: () => ["milestones"] as const,
   kanban: (pillar?: string) => ["kanban", pillar ?? "all"] as const,
   impactEffort: (pillar?: string) => ["impact_effort", pillar ?? "all"] as const,
-  pillarTime: (bucket: Bucket) => ["pillar_time", bucket] as const,
+  pillarTime: (bucket: Bucket, start?: string, end?: string) =>
+    ["pillar_time", bucket, start ?? "", end ?? ""] as const,
   archivedTasks: (pillar?: string, completedFrom?: string, completedTo?: string) =>
     ["archived_tasks", pillar ?? "all", completedFrom ?? "", completedTo ?? ""] as const,
   task: (id: number) => ["task", id] as const,
@@ -30,8 +32,8 @@ export const usePillars = () =>
 export const usePillar = (slug: string) =>
   useQuery({ queryKey: keys.pillar(slug), queryFn: () => api.getPillar(slug) });
 
-export const useMilestones = (pillar?: string) =>
-  useQuery({ queryKey: keys.milestones(pillar), queryFn: () => api.listMilestones(pillar) });
+export const useMilestones = () =>
+  useQuery({ queryKey: keys.milestones(), queryFn: () => api.listMilestones() });
 
 export const useKanban = (pillar?: string) =>
   useQuery({ queryKey: keys.kanban(pillar), queryFn: () => api.getKanban(pillar) });
@@ -39,8 +41,11 @@ export const useKanban = (pillar?: string) =>
 export const useImpactEffort = (pillar?: string) =>
   useQuery({ queryKey: keys.impactEffort(pillar), queryFn: () => api.getImpactEffort(pillar) });
 
-export const usePillarTime = (bucket: Bucket) =>
-  useQuery({ queryKey: keys.pillarTime(bucket), queryFn: () => api.getPillarTime(bucket) });
+export const usePillarTime = (bucket: Bucket, start?: string, end?: string) =>
+  useQuery({
+    queryKey: keys.pillarTime(bucket, start, end),
+    queryFn: () => api.getPillarTime(bucket, start, end),
+  });
 
 export const useArchivedTasks = (params: {
   pillar?: string;
@@ -68,6 +73,21 @@ export function useSetTaskStatus() {
       api.setTaskStatus(id, status),
     onSuccess: invalidate,
   });
+}
+
+// Wraps useSetTaskStatus for the "mark done" transition specifically: fires
+// the status change as normal, then — if the task has nothing logged yet —
+// opens the duration-prompt dialog as a non-blocking follow-up nudge so
+// finished work doesn't silently end up with a 0-minute total.
+export function useMarkTaskDone() {
+  const setStatus = useSetTaskStatus();
+  const { requestDuration } = useDurationPrompt();
+  return (task: Task) => {
+    setStatus.mutate({ id: task.id, status: "done" });
+    if (!task.actual_duration_min) {
+      requestDuration({ id: task.id, title: task.title });
+    }
+  };
 }
 
 // Sweep every done task in the matrix into the archive. Client-side loop over

@@ -10,9 +10,9 @@ describe("ArchiveView", () => {
 
     expect(await screen.findByText("archive finished work")).toBeInTheDocument();
     expect(screen.getByText("short cleanup")).toBeInTheDocument();
-    expect(screen.getByText("1h 15m")).toBeInTheDocument();
+    expect(screen.getByText("1h15")).toBeInTheDocument();
     expect(screen.getByText("15m")).toBeInTheDocument();
-    expect(screen.getByText("2 done")).toBeInTheDocument();
+    expect(screen.getByText("2 tasks")).toBeInTheDocument();
   });
 
   it("filters by search text and minimum duration", async () => {

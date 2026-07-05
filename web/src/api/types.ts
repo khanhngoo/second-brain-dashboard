@@ -19,14 +19,12 @@ export interface Pillar {
 }
 
 export interface PillarRollup extends Pillar {
-  active_milestones: number;
   open_tasks: number;
   minutes_this_week: number;
 }
 
 export interface Milestone {
   id: number;
-  pillar_id: number;
   title: string;
   description: string | null;
   status: MilestoneStatus;
@@ -37,6 +35,7 @@ export interface Milestone {
   total_tasks: number | null;
   done_tasks: number | null;
   progress: number | null;
+  total_minutes: number;
 }
 
 export interface Task {
@@ -174,7 +173,6 @@ export interface PillarTimeRow {
 export type Bucket = "day" | "week" | "month" | "year";
 
 export interface PillarWithMilestones extends Pillar {
-  milestones: Milestone[];
   minutes_this_week: number;
 }
 
