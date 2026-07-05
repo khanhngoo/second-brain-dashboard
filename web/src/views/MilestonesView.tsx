@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { differenceInCalendarDays } from "date-fns";
-import { ChevronDown, ChevronRight, GripVertical, Pencil, Plus, Trash2, X } from "lucide-react";
+import { differenceInCalendarDays, format } from "date-fns";
+import { ChevronDown, ChevronRight, Flag, GripVertical, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   DndContext,
@@ -21,8 +21,10 @@ import { CSS } from "@dnd-kit/utilities";
 import { createMilestone, deleteMilestone, listTasks, updateMilestone, updateTask } from "../api/client";
 import { useMilestones, useInvalidateAll, useMarkTaskDone, useSetTaskStatus } from "../hooks/queries";
 import { useTaskDrawer } from "../state/taskDrawer";
+import { DatePicker } from "../components/DatePicker";
 import { ProgressBar } from "../components/ProgressBar";
 import { Checkbox } from "../components/ui/checkbox";
+import { Skeleton } from "../components/ui/skeleton";
 import { formatDuration } from "../components/DurationInput";
 import type { Milestone, Task } from "../api/types";
 
@@ -44,6 +46,10 @@ async function persistOrder<T extends { id: number; sort_order: number }>(
 // Listeners come from useSortable; typed loosely to avoid depending on a
 // deep dnd-kit internal export path.
 type DragListeners = ReturnType<typeof useSortable>["listeners"];
+
+// Milestone dates travel as "yyyy-MM-dd" strings; the DatePicker speaks Date.
+const parseDay = (s: string) => (s ? new Date(`${s}T00:00:00`) : undefined);
+const formatDay = (d: Date | undefined) => (d ? format(d, "yyyy-MM-dd") : "");
 
 function DragHandle({
   attributes,
@@ -238,11 +244,11 @@ function MilestoneRow({ m }: { m: Milestone }) {
             aria-label="Milestone name"
             autoFocus
           />
-          <input
-            type="date"
-            value={editDate}
-            onChange={(e) => setEditDate(e.target.value)}
-            aria-label="Milestone deadline"
+          <DatePicker
+            value={parseDay(editDate)}
+            onChange={(d) => setEditDate(formatDay(d))}
+            label="Milestone deadline"
+            placeholder="Deadline"
           />
           <button className="btn primary" type="submit" disabled={!editTitle.trim() || save.isPending}>
             Save
@@ -378,7 +384,21 @@ export function MilestonesView() {
     },
   });
 
-  if (isLoading) return <p className="muted">Loading milestones…</p>;
+  if (isLoading) {
+    return (
+      <div className="view-stack">
+        <div className="view-heading">
+          <p className="eyebrow">Progress system</p>
+          <h2 className="view-title">Milestone Progress</h2>
+        </div>
+        <div className="milestone-grid">
+          <Skeleton style={{ height: 76 }} />
+          <Skeleton style={{ height: 76 }} />
+          <Skeleton style={{ height: 76, opacity: 0.6 }} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="view-stack">
@@ -394,14 +414,22 @@ export function MilestonesView() {
         }}
       >
         <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="New milestone title" />
-        <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
+        <DatePicker
+          value={parseDay(targetDate)}
+          onChange={(d) => setTargetDate(formatDay(d))}
+          label="Target date"
+          placeholder="Target date"
+        />
         <button className="btn primary icon-label" type="submit" disabled={!newTitle.trim()}>
           <Plus size={15} />
           Milestone
         </button>
       </form>
       {ordered.length === 0 ? (
-        <p className="empty">No milestones.</p>
+        <div className="empty-state">
+          <Flag size={20} />
+          <p>No milestones yet — name one above and give it a target date.</p>
+        </div>
       ) : (
         <DndContext
           sensors={sensors}

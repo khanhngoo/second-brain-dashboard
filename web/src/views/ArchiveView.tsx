@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { DataTable } from "../components/data-table/DataTable";
+import { Skeleton } from "../components/ui/skeleton";
 import { DataTableColumnHeader } from "../components/data-table/DataTableColumnHeader";
 import { DataTableViewOptions } from "../components/data-table/DataTableViewOptions";
 import { useArchivedTasks, usePillars } from "../hooks/queries";
@@ -197,7 +198,7 @@ export function ArchiveView() {
         <div className="archive-summary" aria-label="Archive summary">
           <span>
             <Archive size={15} />
-            {filtered.length} tasks
+            {filtered.length} {filtered.length === 1 ? "task" : "tasks"}
           </span>
           <span>
             <TimerReset size={15} />
@@ -268,7 +269,11 @@ export function ArchiveView() {
 
       <section className="archive-table-shell">
         {isLoading ? (
-          <p className="muted">Loading archived tasks...</p>
+          <div className="archive-skeleton">
+            {Array.from({ length: 6 }, (_, i) => (
+              <Skeleton key={i} style={{ height: 44, opacity: 1 - i * 0.12 }} />
+            ))}
+          </div>
         ) : (
           <DataTable
             table={table}

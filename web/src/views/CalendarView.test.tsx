@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { CalendarView } from "./CalendarView";
-import { captured, sampleKanban, server } from "../test/server";
+import { captured, sampleTasks, server } from "../test/server";
 import { renderWithProviders } from "../test/utils";
 
 describe("CalendarView", () => {
@@ -33,7 +33,7 @@ describe("CalendarView", () => {
           },
         ]),
       ),
-      http.get("/api/tasks", () => HttpResponse.json(sampleKanban.todo)),
+      http.get("/api/tasks", () => HttpResponse.json(sampleTasks)),
     );
 
     renderWithProviders(<CalendarView />);

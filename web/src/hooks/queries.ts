@@ -7,11 +7,9 @@ import type { Bucket, Task } from "../api/types";
 import { useDurationPrompt } from "../state/durationPrompt";
 
 export const keys = {
-  brief: (date?: string) => ["today_brief", date ?? "today"] as const,
   pillars: () => ["pillars"] as const,
   pillar: (slug: string) => ["pillar", slug] as const,
   milestones: () => ["milestones"] as const,
-  kanban: (pillar?: string) => ["kanban", pillar ?? "all"] as const,
   impactEffort: (pillar?: string) => ["impact_effort", pillar ?? "all"] as const,
   pillarTime: (bucket: Bucket, start?: string, end?: string) =>
     ["pillar_time", bucket, start ?? "", end ?? ""] as const,
@@ -23,9 +21,6 @@ export const keys = {
   calendarStatus: () => ["calendar_status"] as const,
 };
 
-export const useTodayBrief = (date?: string) =>
-  useQuery({ queryKey: keys.brief(date), queryFn: () => api.getTodayBrief(date) });
-
 export const usePillars = () =>
   useQuery({ queryKey: keys.pillars(), queryFn: api.getPillars });
 
@@ -34,9 +29,6 @@ export const usePillar = (slug: string) =>
 
 export const useMilestones = () =>
   useQuery({ queryKey: keys.milestones(), queryFn: () => api.listMilestones() });
-
-export const useKanban = (pillar?: string) =>
-  useQuery({ queryKey: keys.kanban(pillar), queryFn: () => api.getKanban(pillar) });
 
 export const useImpactEffort = (pillar?: string) =>
   useQuery({ queryKey: keys.impactEffort(pillar), queryFn: () => api.getImpactEffort(pillar) });
@@ -102,12 +94,3 @@ export function useArchiveDone() {
   });
 }
 
-export function useConfirmBlocks() {
-  const invalidate = useInvalidateAll();
-  return useMutation({ mutationFn: (date: string) => api.confirmBlocks(date), onSuccess: invalidate });
-}
-
-export function useSkipBlock() {
-  const invalidate = useInvalidateAll();
-  return useMutation({ mutationFn: (id: number) => api.markBlockSkipped(id), onSuccess: invalidate });
-}

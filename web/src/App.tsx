@@ -2,8 +2,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Archive, Plus } from "lucide-react";
 import { useImpactEffort, useArchiveDone } from "./hooks/queries";
 import { PillarSwitcher } from "./components/PillarSwitcher";
-import { SideNav, WORKSPACE_ROUTE_LIST } from "./components/SideNav";
-import { WorkspaceTabs } from "./components/WorkspaceTabs";
+import { SideNav, SPACE_LINKS, WORKSPACE_LINKS, WORKSPACE_ROUTE_LIST } from "./components/SideNav";
 import { TaskDrawer } from "./components/TaskDrawer";
 import { BlockDrawer } from "./components/BlockDrawer";
 import { AnalyticsView } from "./views/AnalyticsView";
@@ -19,6 +18,7 @@ export function App() {
   const { openTaskDrawer } = useTaskDrawer();
   const { pathname } = useLocation();
   const inWorkspace = WORKSPACE_ROUTE_LIST.includes(pathname);
+  const pageTitle = [...WORKSPACE_LINKS, ...SPACE_LINKS].find((l) => l.to === pathname)?.label;
 
   return (
     <div className="app-shell">
@@ -32,8 +32,9 @@ export function App() {
 
       <div className="workspace">
         <header className="topbar">
-          {inWorkspace ? <WorkspaceTabs /> : <span className="topbar-spacer" />}
+          {pageTitle ? <span className="topbar-title">{pageTitle}</span> : <span className="topbar-spacer" />}
           <div className="top-actions">
+            {inWorkspace && <PillarSwitcher />}
             {inWorkspace && <ArchiveDoneButton />}
             <button className="btn primary top-action" onClick={() => openTaskDrawer()} type="button">
               <Plus size={16} />
@@ -41,11 +42,6 @@ export function App() {
             </button>
           </div>
         </header>
-        {inWorkspace && (
-          <div className="filter-bar">
-            <PillarSwitcher />
-          </div>
-        )}
 
         <main className="content">
           <Routes>

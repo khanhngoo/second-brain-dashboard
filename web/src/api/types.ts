@@ -129,30 +129,6 @@ export interface ExternalEvent {
   last_synced: string | null;
 }
 
-export interface PillarWeekMinutes {
-  pillar_id: number;
-  slug: string;
-  name: string;
-  minutes: number;
-}
-
-export interface TodayBrief {
-  date: string;
-  blocks: TimeBlock[];
-  external_events: ExternalEvent[];
-  due_today: Task[];
-  overdue: Task[];
-  in_progress: Task[];
-  unconfirmed_blocks: TimeBlock[];
-  week_pillar_minutes: PillarWeekMinutes[];
-}
-
-export interface Kanban {
-  todo: Task[];
-  doing: Task[];
-  done: Task[];
-}
-
 export interface ImpactEffort {
   high_impact_low_effort: Task[];
   high_impact_high_effort: Task[];

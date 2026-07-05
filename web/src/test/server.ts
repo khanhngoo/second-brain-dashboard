@@ -1,32 +1,6 @@
 import { setupServer } from "msw/node";
 import { http, HttpResponse } from "msw";
-import type { ArchivedTask, TodayBrief, Kanban, PillarRollup } from "../api/types";
-
-export const sampleBrief: TodayBrief = {
-  date: "2026-06-20",
-  blocks: [],
-  external_events: [],
-  due_today: [],
-  overdue: [],
-  in_progress: [],
-  unconfirmed_blocks: [
-    {
-      id: 7,
-      task_id: 1,
-      start_at: "2026-06-19T07:00:00+00:00",
-      end_at: "2026-06-19T08:00:00+00:00",
-      status: "done",
-      auto_logged: 1,
-      confirmed: 0,
-      calendar_provider: null,
-      calendar_event_id: null,
-      created_at: "2026-06-19T06:00:00+00:00",
-    },
-  ],
-  week_pillar_minutes: [
-    { pillar_id: 4, slug: "skills", name: "Skills", minutes: 40 },
-  ],
-};
+import type { ArchivedTask, PillarRollup, Task, TimeBlock } from "../api/types";
 
 export const samplePillars: PillarRollup[] = [
   {
@@ -36,15 +10,26 @@ export const samplePillars: PillarRollup[] = [
   },
 ];
 
-export const sampleKanban: Kanban = {
-  todo: [{
+export const sampleTasks: Task[] = [
+  {
     id: 1, pillar_id: 4, milestone_id: null, title: "write tests", description: null,
     status: "todo", is_impact: 1, is_effort: 0,
     due_date: null, note_ref: null, sort_order: 0,
     created_at: "2026-06-20T00:00:00+00:00", completed_at: null,
-  }],
-  doing: [],
-  done: [],
+  },
+];
+
+export const sampleBlock: TimeBlock = {
+  id: 7,
+  task_id: 1,
+  start_at: "2026-06-19T07:00:00+00:00",
+  end_at: "2026-06-19T08:00:00+00:00",
+  status: "done",
+  auto_logged: 1,
+  confirmed: 0,
+  calendar_provider: null,
+  calendar_event_id: null,
+  created_at: "2026-06-19T06:00:00+00:00",
 };
 
 export const sampleArchivedTasks: ArchivedTask[] = [
@@ -100,37 +85,27 @@ async function record(request: Request) {
 }
 
 export const handlers = [
-  http.get("/api/today_brief", () => HttpResponse.json(sampleBrief)),
   http.get("/api/pillars", () => HttpResponse.json(samplePillars)),
-  http.get("/api/kanban", () => HttpResponse.json(sampleKanban)),
-  http.post("/api/blocks/confirm", async ({ request }) => {
-    await record(request);
-    return HttpResponse.json({ confirmed: 1, date: "2026-06-19" });
-  }),
-  http.post("/api/time_blocks/:id/skip", async ({ request }) => {
-    await record(request);
-    return HttpResponse.json({ ...sampleBrief.unconfirmed_blocks[0], status: "skipped" });
-  }),
   http.post("/api/tasks/:id/status", async ({ request }) => {
     await record(request);
-    return HttpResponse.json({ ...sampleKanban.todo[0], status: "doing" });
+    return HttpResponse.json({ ...sampleTasks[0], status: "doing" });
   }),
   http.patch("/api/tasks/:id", async ({ request }) => {
     await record(request);
-    return HttpResponse.json(sampleKanban.todo[0]);
+    return HttpResponse.json(sampleTasks[0]);
   }),
   http.post("/api/sessions", async ({ request }) => {
     await record(request);
     return HttpResponse.json({ id: 1 });
   }),
-  http.get("/api/tasks", () => HttpResponse.json(sampleKanban.todo)),
+  http.get("/api/tasks", () => HttpResponse.json(sampleTasks)),
   http.get("/api/archive/tasks", () => HttpResponse.json(sampleArchivedTasks)),
-  http.get("/api/tasks/:id", () => HttpResponse.json({ ...sampleKanban.todo[0], subtasks: [], sessions_total_min: 0, blocks: [] })),
+  http.get("/api/tasks/:id", () => HttpResponse.json({ ...sampleTasks[0], subtasks: [], sessions_total_min: 0, blocks: [] })),
   http.get("/api/time_blocks", () => HttpResponse.json([])),
   http.patch("/api/time_blocks/:id", async ({ request, params }) => {
     await record(request);
     return HttpResponse.json({
-      ...sampleBrief.unconfirmed_blocks[0],
+      ...sampleBlock,
       id: Number(params.id),
       ...(await request.clone().json() as Record<string, unknown>),
     });
@@ -141,7 +116,7 @@ export const handlers = [
   ),
   http.get("/api/impact-effort", () =>
     HttpResponse.json({
-      high_impact_low_effort: sampleKanban.todo,
+      high_impact_low_effort: sampleTasks,
       high_impact_high_effort: [],
       low_impact_low_effort: [],
       low_impact_high_effort: [],

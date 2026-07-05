@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Activity } from "lucide-react";
 import { endOfDay, format, startOfDay, subDays, subMonths, subYears } from "date-fns";
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart } from "recharts";
 import {
@@ -138,7 +139,10 @@ export function AnalyticsView() {
           </div>
 
           {!hasRadarData ? (
-            <p className="empty">No logged time yet for this period.</p>
+            <div className="empty-state">
+              <Activity size={20} />
+              <p>No logged time yet for this period — log a session from any task to see your balance.</p>
+            </div>
           ) : (
             <div style={{ height: 320 }}>
               <ChartContainer config={pillarChartConfig} className="aspect-auto h-full w-full">

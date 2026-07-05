@@ -11,7 +11,8 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { useMutation } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Inbox, Plus } from "lucide-react";
+import { Skeleton } from "../components/ui/skeleton";
 import { updateTask } from "../api/client";
 import { useImpactEffort, useInvalidateAll } from "../hooks/queries";
 import { usePillarFilter } from "../state/pillarFilter";
@@ -54,7 +55,8 @@ function Quad({ q, tasks, onAdd }: { q: (typeof QUADRANTS)[number]; tasks: Task[
       ))}
       {tasks.length === 0 && (
         <button className="empty-action" type="button" onClick={onAdd}>
-          Add a task here
+          <Inbox size={20} className="muted-icon" />
+          <span>Nothing here yet — drag a card in or add a task</span>
         </button>
       )}
     </div>
@@ -92,7 +94,26 @@ export function ImpactEffortView() {
     if (target) move.mutate({ id, flags: target.flags });
   }
 
-  if (isLoading || !data) return <p className="muted">Loading matrix…</p>;
+  if (isLoading || !data) {
+    return (
+      <div className="view-stack wide">
+        <div className="view-heading">
+          <p className="eyebrow">Decision board</p>
+          <h2 className="view-title">Impact / Effort Matrix</h2>
+        </div>
+        <div className="matrix">
+          {QUADRANTS.map((q) => (
+            <div className="quadrant" key={q.key}>
+              <Skeleton style={{ width: 140, height: 28 }} />
+              <Skeleton style={{ height: 52 }} />
+              <Skeleton style={{ height: 52 }} />
+              <Skeleton style={{ height: 52, opacity: 0.6 }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="view-stack wide">

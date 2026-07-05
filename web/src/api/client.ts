@@ -7,7 +7,6 @@ import type {
   CalendarStatus,
   ImpactEffort,
   ExternalEvent,
-  Kanban,
   Milestone,
   PillarRollup,
   PillarTimeRow,
@@ -15,7 +14,6 @@ import type {
   Task,
   TaskDetail,
   TimeBlock,
-  TodayBrief,
 } from "./types";
 
 const BASE = "/api";
@@ -57,9 +55,6 @@ function qs(params: Record<string, string | number | boolean | null | undefined>
 
 // --- Reads ----------------------------------------------------------------
 
-export const getTodayBrief = (date?: string) =>
-  request<TodayBrief>(`/today_brief${qs({ date })}`);
-
 export const getPillars = () => request<PillarRollup[]>("/pillars");
 
 export const getPillar = (slug: string) =>
@@ -84,9 +79,6 @@ export const listArchivedTasks = (params: {
 } = {}) => request<ArchivedTask[]>(`/archive/tasks${qs(params)}`);
 
 export const getTask = (id: number) => request<TaskDetail>(`/tasks/${id}`);
-
-export const getKanban = (pillar?: string) =>
-  request<Kanban>(`/kanban${qs({ pillar })}`);
 
 export const getImpactEffort = (pillar?: string) =>
   request<ImpactEffort>(`/impact-effort${qs({ pillar })}`);
@@ -175,12 +167,6 @@ export const moveTimeBlock = (id: number, start_at: string, end_at: string) =>
 
 export const deleteTimeBlock = (id: number) =>
   request(`/time_blocks/${id}`, { method: "DELETE" });
-
-export const confirmBlocks = (date: string) =>
-  request("/blocks/confirm", { method: "POST", body: JSON.stringify({ date }) });
-
-export const markBlockSkipped = (id: number) =>
-  request<TimeBlock>(`/time_blocks/${id}/skip`, { method: "POST" });
 
 // P3 — calendar
 export const getCalendarStatus = () => request<CalendarStatus>("/calendar/status");

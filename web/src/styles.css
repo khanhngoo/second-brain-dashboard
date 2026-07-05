@@ -102,7 +102,23 @@ button:disabled {
 .side-nav {
   display: flex;
   flex-direction: column;
+  gap: 22px;
+}
+
+.side-group {
+  display: flex;
+  flex-direction: column;
   gap: 4px;
+}
+
+.nav-section-label {
+  margin: 0 0 4px;
+  padding: 0 12px;
+  color: var(--muted-soft);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
 }
 
 .side-link {
@@ -150,47 +166,16 @@ button:disabled {
 
 .topbar-spacer { flex: 1; }
 
+.topbar-title {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+
 .top-actions {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.filter-bar {
-  display: flex;
-  justify-content: flex-end;
-  padding: 12px 24px 0;
-}
-
-/* --- Workspace tab strip ----------------------------------------------- */
-.workspace-tabs {
-  display: inline-flex;
-  gap: 2px;
-  padding: 4px;
-  background: var(--surface-card);
-  border-radius: var(--radius-lg);
-}
-
-.workspace-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  height: 34px;
-  padding: 0 14px;
-  border-radius: var(--radius);
-  color: var(--muted);
-  text-decoration: none;
-  font-weight: 500;
-  white-space: nowrap;
-  transition: background 0.12s ease, color 0.12s ease;
-}
-
-.workspace-tab:hover { color: var(--ink); }
-
-.workspace-tab.active {
-  background: var(--canvas);
-  color: var(--ink);
-  box-shadow: var(--shadow-soft);
 }
 
 .placeholder-panel {
@@ -454,12 +439,12 @@ button:disabled {
   min-width: 0;
   max-width: 1220px;
   margin: 0 auto;
-  padding: 40px 24px 72px;
+  padding: 28px 24px 72px;
 }
 
 .view-stack {
   display: grid;
-  gap: 24px;
+  gap: 20px;
 }
 
 /* Wide views (impact/effort matrix) use the full content column instead of
@@ -471,7 +456,7 @@ button:disabled {
 
 .view-heading {
   display: grid;
-  gap: 5px;
+  gap: 2px;
 }
 
 .view-heading.split {
@@ -490,14 +475,23 @@ button:disabled {
   text-transform: uppercase;
 }
 
-h2.view-title,
+h2.view-title {
+  margin: 0;
+  color: var(--ink);
+  font-family: "Cormorant Garamond", "Times New Roman", serif;
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
 .drawer-head h2 {
   margin: 0;
   color: var(--ink);
   font-family: "Cormorant Garamond", "Times New Roman", serif;
-  font-size: 42px;
+  font-size: 28px;
   font-weight: 500;
-  line-height: 1.08;
+  line-height: 1.1;
   letter-spacing: -0.02em;
 }
 
@@ -576,6 +570,41 @@ h2.view-title,
   to { transform: rotate(360deg); }
 }
 
+/* Loading skeletons — palette-matched pulse used by view loading states. */
+.skeleton {
+  border-radius: var(--radius);
+  background: var(--surface-cream-strong);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* Rich empty state — icon + hint (+ optional CTA) shared across views. */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 16px;
+  border: 1px dashed var(--hairline);
+  border-radius: var(--radius-lg);
+  background: rgba(250, 249, 245, 0.6);
+  color: var(--muted);
+  text-align: center;
+}
+
+.empty-state svg {
+  color: var(--muted-soft);
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 13px;
+}
+
 .muted { color: var(--muted); }
 .muted-icon { color: var(--muted-soft); }
 .empty {
@@ -585,12 +614,23 @@ h2.view-title,
 }
 
 .empty-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   width: 100%;
-  min-height: 72px;
+  min-height: 84px;
   border: 1px dashed var(--hairline);
   border-radius: var(--radius-lg);
   background: rgba(250, 249, 245, 0.6);
   color: var(--muted);
+  font-size: 13px;
+}
+
+.empty-action:hover {
+  border-color: var(--muted-soft);
+  color: var(--ink);
 }
 
 /* Drawer */
@@ -889,6 +929,17 @@ textarea:focus {
   outline-offset: 1px;
 }
 
+/* Icon-only controls share one visible focus ring. */
+.icon-btn:focus-visible,
+.mini-icon:focus-visible,
+.drag-handle:focus-visible,
+.milestone-expand:focus-visible,
+.milestone-card-action:focus-visible,
+.milestone-task-remove:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 /* Top row: checkbox + title/meta body + pillar badge. */
 .task-card-main {
   min-width: 0;
@@ -926,7 +977,7 @@ textarea:focus {
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted-soft);
 }
 
@@ -973,7 +1024,7 @@ textarea:focus {
   border-radius: 999px;
   background: var(--canvas);
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
 }
@@ -1058,7 +1109,7 @@ textarea:focus {
 
 .phase-label {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -1075,7 +1126,7 @@ textarea:focus {
 
 .loop-input span {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -1169,6 +1220,7 @@ textarea:focus {
 }
 
 .full-calendar-shell .fc {
+  --fc-today-bg-color: rgba(204, 120, 92, 0.06);
   color: var(--body);
   font-family: inherit;
 }
@@ -1479,7 +1531,8 @@ textarea:focus {
   transition: opacity 0.1s, color 0.1s;
 }
 
-.milestone-card:hover .milestone-expand {
+.milestone-card:hover .milestone-expand,
+.milestone-card:focus-within .milestone-expand {
   opacity: 1;
 }
 
@@ -1518,7 +1571,8 @@ textarea:focus {
   transition: opacity 0.1s;
 }
 
-.milestone-card:hover .milestone-card-actions {
+.milestone-card:hover .milestone-card-actions,
+.milestone-card:focus-within .milestone-card-actions {
   opacity: 1;
 }
 
@@ -1612,7 +1666,8 @@ textarea:focus {
   transition: opacity 0.1s, color 0.1s;
 }
 
-.milestone-task-row:hover .drag-handle {
+.milestone-task-row:hover .drag-handle,
+.milestone-task-row:focus-within .drag-handle {
   opacity: 1;
 }
 
@@ -1645,7 +1700,8 @@ textarea:focus {
   transition: opacity 0.1s;
 }
 
-.milestone-task-row:hover .milestone-task-remove {
+.milestone-task-row:hover .milestone-task-remove,
+.milestone-task-row:focus-within .milestone-task-remove {
   opacity: 1;
 }
 
@@ -1705,11 +1761,72 @@ textarea:focus {
   gap: 18px;
 }
 
+.contribution-heatmap-wrap {
+  display: grid;
+  gap: 12px;
+}
+
+.heatmap-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.heatmap-summary strong {
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 .contribution-heatmap {
   display: flex;
+  gap: 6px;
+  align-items: end;
+  min-width: 0;
+}
+
+/* Sun-first row labels; sized to line up with the 11px cells + 3px gaps. */
+.contribution-heatmap-weekdays {
+  display: flex;
+  flex-direction: column;
   gap: 3px;
+  flex-shrink: 0;
+  padding-bottom: 4px; /* mirrors the scroll strip's padding so rows line up */
+}
+
+.contribution-heatmap-weekdays span {
+  height: 11px;
+  color: var(--muted-soft);
+  font-size: 9px;
+  line-height: 11px;
+}
+
+.contribution-heatmap-scroll {
+  flex: 1;
+  min-width: 0;
   overflow-x: auto;
   padding-bottom: 4px;
+}
+
+.contribution-heatmap-months {
+  display: grid;
+  grid-auto-columns: 14px; /* 11px cell + 3px gap */
+  grid-auto-flow: column;
+  height: 14px;
+  color: var(--muted-soft);
+  font-size: 10px;
+}
+
+.contribution-heatmap-months span {
+  grid-row: 1;
+  white-space: nowrap;
+}
+
+.contribution-heatmap-grid {
+  display: flex;
+  gap: 3px;
 }
 
 .contribution-heatmap-col {
@@ -1771,6 +1888,7 @@ textarea:focus {
   align-items: center;
   gap: 6px;
   font-size: 13px;
+  font-weight: 500;
   color: var(--body);
   cursor: pointer;
 }
@@ -1836,14 +1954,26 @@ textarea:focus {
 }
 
 .archive-toolbar {
-  display: grid;
-  grid-template-columns: minmax(220px, 1.5fr) repeat(4, minmax(150px, 1fr)) repeat(2, minmax(90px, 0.55fr)) auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   align-items: end;
   padding: 16px;
   border: 1px solid var(--hairline);
   border-radius: var(--radius-lg);
   background: var(--surface-card);
+}
+
+.archive-toolbar .archive-filter {
+  flex: 1 1 150px;
+}
+
+.archive-toolbar .archive-filter.wide {
+  flex: 2 1 220px;
+}
+
+.archive-toolbar .archive-filter.compact {
+  flex: 0 1 100px;
 }
 
 .archive-filter {
@@ -1868,6 +1998,12 @@ textarea:focus {
   border-radius: var(--radius-lg);
   background: var(--canvas);
   box-shadow: var(--shadow-soft);
+}
+
+.archive-skeleton {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
 }
 
 .archive-table-shell table {
@@ -1989,15 +2125,21 @@ textarea:focus {
   .sidebar .side-nav {
     flex-direction: row;
     flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .sidebar .side-group {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .sidebar .nav-section-label {
+    display: none;
   }
 
   .topbar {
     flex-wrap: wrap;
-  }
-
-  .workspace-tabs {
-    overflow-x: auto;
-    max-width: 100%;
   }
 
   .matrix,
@@ -2006,8 +2148,7 @@ textarea:focus {
   }
 
   .milestone-head,
-  .create-strip,
-  .archive-toolbar {
+  .create-strip {
     grid-template-columns: 1fr;
   }
 
@@ -2032,7 +2173,7 @@ textarea:focus {
 
   h2.view-title,
   .drawer-head h2 {
-    font-size: 34px;
+    font-size: 26px;
   }
 
   .form-grid,

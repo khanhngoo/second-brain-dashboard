@@ -1,43 +1,57 @@
-import { NavLink, useLocation } from "react-router-dom";
-import { BookOpen, Feather, LayoutGrid } from "lucide-react";
+import { NavLink } from "react-router-dom";
+import {
+  Archive,
+  BarChart3,
+  BookOpen,
+  CalendarDays,
+  Feather,
+  GitFork,
+  Milestone,
+} from "lucide-react";
 
-// The day-to-day task views live behind "Workspace" (a tab strip, see App.tsx);
-// the two long-form spaces are their own side-rail destinations.
-export const WORKSPACE_ROUTE_LIST = [
-  "/impact-effort",
-  "/calendar",
-  "/analytics",
-  "/archive",
-  "/milestones",
+// Single-level navigation: every destination lives in the side rail, grouped
+// into the day-to-day task views ("Workspace") and long-form spaces.
+export const WORKSPACE_LINKS = [
+  { to: "/impact-effort", label: "Impact / Effort", icon: GitFork },
+  { to: "/calendar", label: "Calendar", icon: CalendarDays },
+  { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/archive", label: "Archive", icon: Archive },
+  { to: "/milestones", label: "Milestones", icon: Milestone },
 ];
 
-export function SideNav() {
-  const { pathname } = useLocation();
-  const workspaceActive = WORKSPACE_ROUTE_LIST.includes(pathname);
+export const SPACE_LINKS = [
+  { to: "/journals", label: "Journals", icon: BookOpen },
+  { to: "/memoir", label: "Memoir", icon: Feather },
+];
 
+export const WORKSPACE_ROUTE_LIST = WORKSPACE_LINKS.map((l) => l.to);
+
+function NavGroup({ label, links }: { label: string; links: typeof WORKSPACE_LINKS }) {
+  return (
+    <div className="side-group">
+      <p className="nav-section-label">{label}</p>
+      {links.map((l) => {
+        const Icon = l.icon;
+        return (
+          <NavLink
+            key={l.to}
+            to={l.to}
+            className={({ isActive }) => (isActive ? "side-link active" : "side-link")}
+          >
+            <Icon size={18} />
+            <span>{l.label}</span>
+          </NavLink>
+        );
+      })}
+    </div>
+  );
+}
+
+export function SideNav() {
   return (
     <nav className="side-nav" aria-label="Primary">
-      <NavLink
-        to="/impact-effort"
-        className={workspaceActive ? "side-link active" : "side-link"}
-      >
-        <LayoutGrid size={18} />
-        <span>Workspace</span>
-      </NavLink>
-      <NavLink
-        to="/journals"
-        className={({ isActive }) => (isActive ? "side-link active" : "side-link")}
-      >
-        <BookOpen size={18} />
-        <span>Journals</span>
-      </NavLink>
-      <NavLink
-        to="/memoir"
-        className={({ isActive }) => (isActive ? "side-link active" : "side-link")}
-      >
-        <Feather size={18} />
-        <span>Memoir</span>
-      </NavLink>
+      <NavGroup label="Workspace" links={WORKSPACE_LINKS} />
+      <NavGroup label="Spaces" links={SPACE_LINKS} />
     </nav>
   );
 }
