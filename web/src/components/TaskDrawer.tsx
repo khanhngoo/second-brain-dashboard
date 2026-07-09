@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { KeyboardEvent, useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createTask, getTask, logSession, replaceSessions, updateTask } from "../api/client";
 import { useMilestones, usePillars, useInvalidateAll } from "../hooks/queries";
@@ -143,14 +143,30 @@ export function TaskDrawer() {
     },
   });
 
-  function submit(e: FormEvent) {
-    e.preventDefault();
+  function submit(e?: { preventDefault: () => void }) {
+    e?.preventDefault();
     if (!title.trim() || !pillar) return;
+    if (create.isPending || update.isPending) return;
     if (editingTaskId != null) {
       update.mutate();
       return;
     }
     create.mutate();
+  }
+
+  // The Duration section (SessionLogger) sits outside <form>, so Enter there
+  // never fires the form's onSubmit. Catch Enter across the whole sheet body and
+  // route it to submit — but leave buttons and textareas alone so Enter still
+  // activates presets/mode toggles and allows newlines.
+  function onSheetKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+    if (e.key !== "Enter" || e.shiftKey) return;
+    const el = e.target as HTMLElement;
+    const tag = el.tagName;
+    if (tag === "BUTTON" || tag === "TEXTAREA" || el.isContentEditable) return;
+    // Radix Select trigger is a button (handled above); its listbox uses Enter
+    // to pick an option — don't hijack that.
+    if (el.getAttribute("role") === "option") return;
+    submit(e);
   }
 
   return (
@@ -162,7 +178,7 @@ export function TaskDrawer() {
           <SheetDescription className="sr-only">Create or edit a task.</SheetDescription>
         </SheetHeader>
 
-        <div className="sheet-body">
+        <div className="sheet-body" onKeyDown={onSheetKeyDown}>
           <form id="task-form" onSubmit={submit}>
             <section className="drawer-section">
               <h3 className="drawer-section-title">Details</h3>
