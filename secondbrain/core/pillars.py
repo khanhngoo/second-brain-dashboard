@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from .serialize import row_to_dict, rows_to_dicts
+from .serialize import row_to_dict
 from .validation import require_pillar
 
 
@@ -37,17 +37,17 @@ def _minutes_this_week(conn: sqlite3.Connection, pillar_id: int) -> int:
 
 
 def get_pillars(conn: sqlite3.Connection) -> list[dict]:
-    """All pillars with rollup: active milestones, open tasks, minutes this week."""
+    """All pillars with rollup: open tasks, minutes this week.
+
+    Milestones are pillar-agnostic (a milestone's tasks may span many
+    pillars), so there's no well-defined "milestones per pillar" count.
+    """
     pillars = conn.execute(
         "SELECT * FROM pillars ORDER BY sort_order, id"
     ).fetchall()
     out = []
     for p in pillars:
         d = row_to_dict(p)
-        d["active_milestones"] = conn.execute(
-            "SELECT COUNT(*) FROM milestones WHERE pillar_id = ? AND status = 'active'",
-            (p["id"],),
-        ).fetchone()[0]
         d["open_tasks"] = conn.execute(
             "SELECT COUNT(*) FROM tasks WHERE pillar_id = ? AND status IN ('todo','doing')",
             (p["id"],),
@@ -58,19 +58,8 @@ def get_pillars(conn: sqlite3.Connection) -> list[dict]:
 
 
 def get_pillar(conn: sqlite3.Connection, slug: str) -> dict:
-    """One pillar with its milestones (each with derived progress %)."""
+    """One pillar with its rollup stats."""
     p = require_pillar(conn, slug)
     d = row_to_dict(p)
-    milestones = conn.execute(
-        """
-        SELECT m.*, vp.total_tasks, vp.done_tasks, vp.progress
-        FROM milestones m
-        LEFT JOIN v_milestone_progress vp ON vp.milestone_id = m.id
-        WHERE m.pillar_id = ?
-        ORDER BY m.sort_order, m.id
-        """,
-        (p["id"],),
-    ).fetchall()
-    d["milestones"] = rows_to_dicts(milestones)
     d["minutes_this_week"] = _minutes_this_week(conn, p["id"])
     return d

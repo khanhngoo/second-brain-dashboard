@@ -40,15 +40,15 @@ def _run_via_mcp(path):
     conn = connect(path)
     init_db(conn)
     seed_pillars(conn)
-    m = core.create_milestone(conn, pillar="cracked_engineer", title="M")
-    t = core.create_task(conn, pillar="cracked_engineer", title="t", milestone=m["id"],
-                         is_important=True)
+    m = core.create_milestone(conn, title="M")
+    t = core.create_task(conn, pillar="skills", title="t", milestone=m["id"],
+                         is_impact=True)
     core.set_task_status(conn, t["id"], "doing")
     core.log_session(conn, t["id"], 40, started_at="2026-06-20T08:00:00+00:00")
     out = {
         "create_task": t,
-        "list_tasks": core.list_tasks(conn, pillar="cracked_engineer"),
-        "get_kanban": core.get_kanban(conn, "cracked_engineer"),
+        "list_tasks": core.list_tasks(conn, pillar="skills"),
+        "get_kanban": core.get_kanban(conn, "skills"),
         "get_today_brief": core.get_today_brief(conn, "2026-06-20"),
     }
     conn.close()
@@ -56,9 +56,9 @@ def _run_via_mcp(path):
 
 
 def _run_via_http(client):
-    m = client.post("/milestones", json={"pillar": "cracked_engineer", "title": "M"}).json()
+    m = client.post("/milestones", json={"title": "M"}).json()
     t = client.post("/tasks", json={
-        "pillar": "cracked_engineer", "title": "t", "milestone": m["id"], "is_important": True,
+        "pillar": "skills", "title": "t", "milestone": m["id"], "is_impact": True,
     }).json()
     client.post(f"/tasks/{t['id']}/status", json={"status": "doing"})
     client.post("/sessions", json={
@@ -66,8 +66,8 @@ def _run_via_http(client):
     })
     return {
         "create_task": t,
-        "list_tasks": client.get("/tasks", params={"pillar": "cracked_engineer"}).json(),
-        "get_kanban": client.get("/kanban", params={"pillar": "cracked_engineer"}).json(),
+        "list_tasks": client.get("/tasks", params={"pillar": "skills"}).json(),
+        "get_kanban": client.get("/kanban", params={"pillar": "skills"}).json(),
         "get_today_brief": client.get("/today_brief", params={"date": "2026-06-20"}).json(),
     }
 

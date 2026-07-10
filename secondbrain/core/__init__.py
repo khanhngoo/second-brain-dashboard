@@ -15,16 +15,25 @@ from .blocks import (
     move_time_block,
     run_autolog_sweep,
 )
-from .boards import get_eisenhower, get_kanban
+from .blocks import list_blocks_range
+from .boards import get_impact_effort, get_kanban
 from .brief import get_today_brief
-from .milestones import create_milestone, list_milestones, update_milestone
+from .calendar_accounts import (
+    add_calendar_account,
+    list_calendar_accounts,
+    remove_calendar_account,
+)
+from .calsync import calendar_status, flush_calendar_outbox, run_calendar_sync
+from .events import list_external_events, upsert_external_events
+from .milestones import create_milestone, delete_milestone, list_milestones, update_milestone
 from .pillars import get_pillar, get_pillars
 from .rawquery import query
-from .sessions import log_session, start_timer, stop_timer
+from .sessions import log_session, replace_sessions
 from .subtasks import add_subtask, toggle_subtask
 from .tasks import (
     create_task,
     get_task,
+    list_archived_tasks,
     list_tasks,
     set_task_status,
     update_task,
@@ -37,22 +46,25 @@ __all__ = [
     "get_pillar",
     "list_milestones",
     "list_tasks",
+    "list_archived_tasks",
     "get_task",
     "get_kanban",
-    "get_eisenhower",
+    "get_impact_effort",
     "get_pillar_time",
+    "list_external_events",
+    "list_blocks_range",
     # writes — tasks & hierarchy
     "create_task",
     "update_task",
     "set_task_status",
     "create_milestone",
     "update_milestone",
+    "delete_milestone",
     "add_subtask",
     "toggle_subtask",
     # writes — time
     "log_session",
-    "start_timer",
-    "stop_timer",
+    "replace_sessions",
     # writes — scheduling
     "create_time_block",
     "move_time_block",
@@ -60,6 +72,14 @@ __all__ = [
     "confirm_blocks",
     "mark_block_skipped",
     "run_autolog_sweep",
+    "upsert_external_events",
+    # calendar (P3)
+    "calendar_status",
+    "run_calendar_sync",
+    "flush_calendar_outbox",
+    "add_calendar_account",
+    "list_calendar_accounts",
+    "remove_calendar_account",
     # escape hatch
     "query",
 ]

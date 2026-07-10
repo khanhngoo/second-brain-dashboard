@@ -1,12 +1,11 @@
 -- Second Brain schema (see docs/02 — Data Model).
 -- All times are UTC ISO-8601 TEXT. Booleans are INTEGER 0/1.
 --
--- Tables 1:1 with docs/02, plus three P0 additions (marked [P0+]):
---   * timers                  -- server-managed timer state (docs/04)
+-- Tables 1:1 with docs/02, plus two P0 additions (marked [P0+]):
 --   * sessions.voided         -- soft-void for skipped auto-logs (reversibility)
 --   * time_blocks.confirmed   -- morning-brief confirm state
 
-PRAGMA user_version = 1;
+PRAGMA user_version = 4;
 
 -- ---------------------------------------------------------------------------
 -- pillars  (the five fixed life pillars; rows are extensible, seed exactly 5)
@@ -22,11 +21,11 @@ CREATE TABLE IF NOT EXISTS pillars (
 );
 
 -- ---------------------------------------------------------------------------
--- milestones  (belong to one pillar; progress is DERIVED, never stored)
+-- milestones  (pillar-agnostic; a milestone's tasks may span many pillars.
+-- progress is DERIVED, never stored)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS milestones (
     id           INTEGER PRIMARY KEY,
-    pillar_id    INTEGER NOT NULL REFERENCES pillars(id) ON DELETE RESTRICT,
     title        TEXT NOT NULL,
     description  TEXT,
     status       TEXT NOT NULL DEFAULT 'active',   -- active / done / archived
@@ -37,9 +36,8 @@ CREATE TABLE IF NOT EXISTS milestones (
 );
 
 -- ---------------------------------------------------------------------------
--- tasks  (belong to a pillar; may belong to a milestone)
--- Invariant (enforced in core, not SQL): if milestone_id is set, pillar_id
--- must equal that milestone's pillar_id.
+-- tasks  (belong to a pillar; may belong to a milestone — independently, a
+-- milestone's tasks can each have a different pillar)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS tasks (
     id                     INTEGER PRIMARY KEY,
@@ -48,10 +46,8 @@ CREATE TABLE IF NOT EXISTS tasks (
     title                  TEXT NOT NULL,
     description            TEXT,
     status                 TEXT NOT NULL DEFAULT 'todo',   -- todo / doing / done / archived
-    is_urgent              INTEGER NOT NULL DEFAULT 0,
-    is_important           INTEGER NOT NULL DEFAULT 0,
-    estimated_duration_min INTEGER,
-    timer_mode             TEXT,           -- pomodoro / manual
+    is_impact              INTEGER NOT NULL DEFAULT 0,
+    is_effort              INTEGER NOT NULL DEFAULT 0,
     due_date               TEXT,
     note_ref               TEXT,           -- link to an Obsidian note (docs/06)
     sort_order             INTEGER NOT NULL DEFAULT 0,
@@ -79,7 +75,7 @@ CREATE TABLE IF NOT EXISTS subtasks (
 CREATE TABLE IF NOT EXISTS sessions (
     id           INTEGER PRIMARY KEY,
     task_id      INTEGER NOT NULL REFERENCES tasks(id) ON DELETE RESTRICT,
-    source       TEXT NOT NULL DEFAULT 'manual',   -- block / pomodoro / manual
+    source       TEXT NOT NULL DEFAULT 'manual',   -- block / pomodoro / manual / adhd
     started_at   TEXT,
     ended_at     TEXT,
     duration_min INTEGER NOT NULL,
@@ -131,14 +127,17 @@ CREATE TABLE IF NOT EXISTS calendar_accounts (
 );
 
 -- ---------------------------------------------------------------------------
--- timers  [P0+]  (server-managed timer state; one active timer per task)
--- DB-backed because MCP and HTTP run as separate processes sharing one file.
+-- calendar_outbox  [P3]  (retry queue for calendar pushes)
+-- The local time_block is the source of truth and persists regardless; a failed
+-- push is enqueued here and drained on the next sync tick (eventually consistent).
 -- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS timers (
-    task_id    INTEGER PRIMARY KEY REFERENCES tasks(id) ON DELETE CASCADE,
-    mode       TEXT NOT NULL,        -- pomodoro / manual
-    started_at TEXT NOT NULL,
-    est_min    INTEGER
+CREATE TABLE IF NOT EXISTS calendar_outbox (
+    id         INTEGER PRIMARY KEY,
+    op         TEXT NOT NULL,        -- create / update / delete
+    block_id   INTEGER,             -- the local time_block (may be gone for delete)
+    payload    TEXT,                -- JSON: title/start_at/end_at/calendar_event_id
+    attempts   INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
 );
 
 -- ---------------------------------------------------------------------------
@@ -154,7 +153,6 @@ CREATE INDEX IF NOT EXISTS idx_blocks_task       ON time_blocks(task_id);
 CREATE INDEX IF NOT EXISTS idx_blocks_start      ON time_blocks(start_at);
 CREATE INDEX IF NOT EXISTS idx_blocks_status     ON time_blocks(status);
 CREATE INDEX IF NOT EXISTS idx_subtasks_task     ON subtasks(task_id);
-CREATE INDEX IF NOT EXISTS idx_milestones_pillar ON milestones(pillar_id);
 
 -- ---------------------------------------------------------------------------
 -- Derived views (docs/02)

@@ -7,7 +7,7 @@ from secondbrain.errors import ReadOnlyViolation
 
 
 def test_select_returns_rows(seeded_db, db_path):
-    core.create_task(seeded_db, pillar="body_temple", title="t")
+    core.create_task(seeded_db, pillar="energy", title="t")
     res = core.query("SELECT COUNT(*) AS c FROM tasks", db_path)
     assert res["rows"][0]["c"] == 1
 
@@ -27,7 +27,7 @@ def test_cte_with_select_allowed(seeded_db, db_path):
     "SELECT 1; DELETE FROM tasks",
 ])
 def test_non_select_rejected_and_db_unchanged(seeded_db, db_path, sql):
-    core.create_task(seeded_db, pillar="body_temple", title="keep")
+    core.create_task(seeded_db, pillar="energy", title="keep")
     before = seeded_db.execute("SELECT COUNT(*) FROM tasks").fetchone()[0]
     with pytest.raises(ReadOnlyViolation):
         core.query(sql, db_path)

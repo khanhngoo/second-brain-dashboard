@@ -1,8 +1,8 @@
-"""Seed data: the five fixed pillars + a few sample milestones/tasks.
+"""Seed data: the seven fixed pillars + a few sample milestones/tasks.
 
 Pillars are inserted directly (they're the fixed foundation). Milestones and
 tasks go through the core.create_* functions so seeding exercises the same
-validation and the pillar/milestone invariant real callers hit.
+validation real callers hit.
 """
 
 from __future__ import annotations
@@ -11,13 +11,15 @@ import sqlite3
 
 from . import clock, core
 
-# docs/01 — the five pillars, in order, with distinct default colors.
+# The seven pillars, in order, with distinct default colors.
 PILLARS = [
-    ("polymath_knowledge", "Polymath Knowledge", "#6C5CE7"),
-    ("founder_mindset", "Founder Mindset", "#E17055"),
-    ("body_temple", "Body Temple", "#00B894"),
-    ("cracked_engineer", "Cracked Engineer", "#0984E3"),
-    ("soul_connection", "Soul Connection", "#E84393"),
+    ("skills", "Skills", "#6C5CE7"),
+    ("mindset_soft_skills", "Mindset & Soft Skills", "#E17055"),
+    ("network", "Network", "#00B894"),
+    ("personal_brand", "Personal Brand", "#0984E3"),
+    ("energy", "Energy", "#E84393"),
+    ("assets", "Assets", "#FDCB6E"),
+    ("outcomes", "Outcomes", "#636E72"),
 ]
 
 
@@ -37,33 +39,32 @@ def seed_pillars(conn: sqlite3.Connection) -> None:
 def seed_samples(conn: sqlite3.Connection) -> None:
     """A handful of milestones/tasks so boards, the brief, and analytics have content."""
     m = core.create_milestone(
-        conn, pillar="cracked_engineer", title="Ship Second Brain P0",
+        conn, title="Ship Second Brain P0",
         description="Foundation: schema, MCP, HTTP, CLI.",
     )
     core.create_task(
-        conn, pillar="cracked_engineer", title="Write the SQLite schema",
-        milestone=m["id"], is_urgent=True, is_important=True,
-        estimated_duration_min=90,
+        conn, pillar="skills", title="Write the SQLite schema",
+        milestone=m["id"], is_effort=True, is_impact=True,
     )
     t2 = core.create_task(
-        conn, pillar="cracked_engineer", title="Wire the MCP server",
-        milestone=m["id"], is_important=True, estimated_duration_min=120,
+        conn, pillar="skills", title="Wire the MCP server",
+        milestone=m["id"], is_impact=True,
     )
     core.set_task_status(conn, t2["id"], "doing")
 
     core.create_task(
-        conn, pillar="body_temple", title="Morning run",
-        is_urgent=False, is_important=True, estimated_duration_min=30,
+        conn, pillar="energy", title="Morning run",
+        is_effort=False, is_impact=True,
     )
     core.create_task(
-        conn, pillar="polymath_knowledge", title="Read one paper",
-        is_important=True, estimated_duration_min=45,
+        conn, pillar="outcomes", title="Read one paper",
+        is_impact=True,
     )
 
 
 def seed(conn: sqlite3.Connection, *, reset: bool = False, with_samples: bool = True) -> None:
     if reset:
-        for table in ("timers", "sessions", "time_blocks", "subtasks", "tasks",
+        for table in ("sessions", "time_blocks", "subtasks", "tasks",
                       "milestones", "external_events", "calendar_accounts", "pillars"):
             conn.execute(f"DELETE FROM {table}")
         conn.commit()

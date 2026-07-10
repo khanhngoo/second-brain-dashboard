@@ -44,10 +44,8 @@ class CreateTaskBody(BaseModel):
     title: str
     milestone: int | None = None
     description: str | None = None
-    is_urgent: bool = False
-    is_important: bool = False
-    estimated_duration_min: int | None = None
-    timer_mode: str | None = None
+    is_impact: bool = False
+    is_effort: bool = False
     due_date: str | None = None
     note_ref: str | None = None
 
@@ -61,7 +59,6 @@ class StatusBody(BaseModel):
 
 
 class CreateMilestoneBody(BaseModel):
-    pillar: str | int
     title: str
     description: str | None = None
     target_date: str | None = None
@@ -80,14 +77,10 @@ class LogSessionBody(BaseModel):
     note: str | None = None
 
 
-class StartTimerBody(BaseModel):
-    task_id: int
-    mode: str | None = None
-
-
-class StopTimerBody(BaseModel):
-    task_id: int
-    mark_done: bool = False
+class ReplaceSessionsBody(BaseModel):
+    duration_min: int
+    source: str = "manual"
+    note: str | None = None
 
 
 class TimeBlockBody(BaseModel):
@@ -127,8 +120,8 @@ def pillar(slug: str):
 
 
 @app.get("/milestones")
-def milestones(pillar: str | None = None, status: str | None = None):
-    return core.list_milestones(_conn(), pillar, status)
+def milestones(status: str | None = None):
+    return core.list_milestones(_conn(), status)
 
 
 @app.get("/tasks")
@@ -143,6 +136,15 @@ def tasks(
     return core.list_tasks(_conn(), pillar, milestone, status, quadrant, due_before, limit)
 
 
+@app.get("/archive/tasks")
+def archive_tasks(
+    pillar: str | None = None,
+    completed_from: str | None = None,
+    completed_to: str | None = None,
+):
+    return core.list_archived_tasks(_conn(), pillar, completed_from, completed_to)
+
+
 @app.get("/tasks/{id}")
 def task(id: int):
     return core.get_task(_conn(), id)
@@ -153,14 +155,24 @@ def kanban(pillar: str | None = None):
     return core.get_kanban(_conn(), pillar)
 
 
-@app.get("/eisenhower")
-def eisenhower(pillar: str | None = None):
-    return core.get_eisenhower(_conn(), pillar)
+@app.get("/impact-effort")
+def impact_effort(pillar: str | None = None):
+    return core.get_impact_effort(_conn(), pillar)
 
 
 @app.get("/pillar_time")
 def pillar_time(bucket: str, start: str | None = None, end: str | None = None):
     return core.get_pillar_time(_conn(), bucket, start, end)
+
+
+@app.get("/external_events")
+def external_events(start: str, end: str):
+    return core.list_external_events(_conn(), start, end)
+
+
+@app.get("/time_blocks")
+def time_blocks(start: str, end: str):
+    return core.list_blocks_range(_conn(), start, end)
 
 
 # --- Writes ---------------------------------------------------------------
@@ -190,6 +202,11 @@ def update_milestone(id: int, body: UpdateFieldsBody):
     return core.update_milestone(_conn(), id, **body.fields)
 
 
+@app.delete("/milestones/{id}", status_code=204)
+def delete_milestone(id: int):
+    core.delete_milestone(_conn(), id)
+
+
 @app.post("/tasks/{task_id}/subtasks")
 def add_subtask(task_id: int, body: SubtaskBody):
     return core.add_subtask(_conn(), task_id, body.title)
@@ -208,14 +225,9 @@ def log_session(body: LogSessionBody):
     )
 
 
-@app.post("/timers/start")
-def start_timer(body: StartTimerBody):
-    return core.start_timer(_conn(), body.task_id, body.mode)
-
-
-@app.post("/timers/stop")
-def stop_timer(body: StopTimerBody):
-    return core.stop_timer(_conn(), body.task_id, body.mark_done)
+@app.patch("/tasks/{id}/sessions")
+def replace_sessions(id: int, body: ReplaceSessionsBody):
+    return core.replace_sessions(_conn(), id, body.duration_min, body.source, body.note)
 
 
 @app.post("/time_blocks")
@@ -246,3 +258,36 @@ def mark_block_skipped(id: int):
 @app.post("/query")
 def query(body: QueryBody):
     return core.query(body.sql, config.db_path())
+
+
+# --- Calendar (P3) --------------------------------------------------------
+
+class SyncBody(BaseModel):
+    start: str | None = None
+    end: str | None = None
+
+
+@app.get("/calendar/status")
+def calendar_status():
+    return core.calendar_status(_conn())
+
+
+@app.post("/calendar/sync")
+def calendar_sync(body: SyncBody):
+    from datetime import timedelta
+    from .. import clock
+
+    # Default to a one-week window around today if no range is given.
+    start = body.start or (clock.now_utc() - timedelta(days=1)).isoformat()
+    end = body.end or (clock.now_utc() + timedelta(days=7)).isoformat()
+    return core.run_calendar_sync(_conn(), start, end)
+
+
+@app.post("/calendar/connect")
+def calendar_connect():
+    # The OAuth consent flow opens a browser and must run from the CLI
+    # (`sb calendar connect`), not a headless API process.
+    return JSONResponse(
+        status_code=400,
+        content={"error": "Run `sb calendar connect` to authorize a Google account."},
+    )

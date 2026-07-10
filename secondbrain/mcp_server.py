@@ -37,8 +37,8 @@ def get_pillar(slug: str) -> dict:
 
 
 @mcp.tool()
-def list_milestones(pillar: str | int | None = None, status: str | None = None) -> list[dict]:
-    return core.list_milestones(_conn(), pillar, status)
+def list_milestones(status: str | None = None) -> list[dict]:
+    return core.list_milestones(_conn(), status)
 
 
 @mcp.tool()
@@ -64,13 +64,23 @@ def get_kanban(pillar: str | int | None = None) -> dict:
 
 
 @mcp.tool()
-def get_eisenhower(pillar: str | int | None = None) -> dict:
-    return core.get_eisenhower(_conn(), pillar)
+def get_impact_effort(pillar: str | int | None = None) -> dict:
+    return core.get_impact_effort(_conn(), pillar)
 
 
 @mcp.tool()
 def get_pillar_time(bucket: str, start: str | None = None, end: str | None = None) -> list[dict]:
     return core.get_pillar_time(_conn(), bucket, start, end)
+
+
+@mcp.tool()
+def list_external_events(start: str, end: str) -> list[dict]:
+    return core.list_external_events(_conn(), start, end)
+
+
+@mcp.tool()
+def list_time_blocks(start: str, end: str) -> list[dict]:
+    return core.list_blocks_range(_conn(), start, end)
 
 
 # --- Writes: tasks & hierarchy --------------------------------------------
@@ -81,17 +91,14 @@ def create_task(
     title: str,
     milestone: int | None = None,
     description: str | None = None,
-    is_urgent: bool = False,
-    is_important: bool = False,
-    estimated_duration_min: int | None = None,
-    timer_mode: str | None = None,
+    is_impact: bool = False,
+    is_effort: bool = False,
     due_date: str | None = None,
     note_ref: str | None = None,
 ) -> dict:
     return core.create_task(
         _conn(), pillar=pillar, title=title, milestone=milestone, description=description,
-        is_urgent=is_urgent, is_important=is_important,
-        estimated_duration_min=estimated_duration_min, timer_mode=timer_mode,
+        is_impact=is_impact, is_effort=is_effort,
         due_date=due_date, note_ref=note_ref,
     )
 
@@ -108,19 +115,23 @@ def set_task_status(id: int, status: str) -> dict:
 
 @mcp.tool()
 def create_milestone(
-    pillar: str | int,
     title: str,
     description: str | None = None,
     target_date: str | None = None,
 ) -> dict:
     return core.create_milestone(
-        _conn(), pillar=pillar, title=title, description=description, target_date=target_date
+        _conn(), title=title, description=description, target_date=target_date
     )
 
 
 @mcp.tool()
 def update_milestone(id: int, fields: dict) -> dict:
     return core.update_milestone(_conn(), id, **fields)
+
+
+@mcp.tool()
+def delete_milestone(id: int) -> None:
+    core.delete_milestone(_conn(), id)
 
 
 @mcp.tool()
@@ -145,16 +156,6 @@ def log_session(
     note: str | None = None,
 ) -> dict:
     return core.log_session(_conn(), task_id, duration_min, source, started_at, ended_at, note)
-
-
-@mcp.tool()
-def start_timer(task_id: int, mode: str | None = None) -> dict:
-    return core.start_timer(_conn(), task_id, mode)
-
-
-@mcp.tool()
-def stop_timer(task_id: int, mark_done: bool = False) -> dict:
-    return core.stop_timer(_conn(), task_id, mark_done)
 
 
 # --- Writes: scheduling ---------------------------------------------------
@@ -190,6 +191,18 @@ def mark_block_skipped(id: int) -> dict:
 def query(sql: str) -> dict:
     """Read-only SELECT against the tables/views in docs/02."""
     return core.query(sql, config.db_path())
+
+
+# --- Calendar (P3) --------------------------------------------------------
+
+@mcp.tool()
+def calendar_status() -> dict:
+    return core.calendar_status(_conn())
+
+
+@mcp.tool()
+def calendar_sync(start: str, end: str) -> dict:
+    return core.run_calendar_sync(_conn(), start, end)
 
 
 def main() -> None:

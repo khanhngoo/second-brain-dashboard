@@ -1,8 +1,9 @@
 """Task reads + writes.
 
 Two rules enforced here:
-  * the pillar/milestone invariant (via resolve_task_pillar), on create AND
-    whenever update touches pillar/milestone;
+  * pillar resolution (via resolve_task_pillar), on create AND whenever
+    update touches pillar/milestone — milestones are pillar-agnostic, so this
+    only validates the pillar itself and that the milestone (if any) exists;
   * status is written ONLY by set_task_status — never by create_task/update_task
     (the session-vs-status split, docs/02 + docs/04).
 """
@@ -16,7 +17,6 @@ from ..errors import ValidationError
 from .serialize import row_to_dict, rows_to_dicts
 from .validation import (
     TASK_STATUSES,
-    TIMER_MODES,
     check_enum,
     quadrant_to_flags,
     require_task,
@@ -35,16 +35,12 @@ def create_task(
     title: str,
     milestone: int | None = None,
     description: str | None = None,
-    is_urgent: bool = False,
-    is_important: bool = False,
-    estimated_duration_min: int | None = None,
-    timer_mode: str | None = None,
+    is_impact: bool = False,
+    is_effort: bool = False,
     due_date: str | None = None,
     note_ref: str | None = None,
 ) -> dict:
     pillar_id = resolve_task_pillar(conn, pillar=pillar, milestone_id=milestone)
-    if timer_mode is not None:
-        check_enum(timer_mode, TIMER_MODES, "timer_mode")
     now = clock.now_utc_iso()
     nxt = conn.execute(
         "SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM tasks WHERE pillar_id = ?",
@@ -55,14 +51,14 @@ def create_task(
             """
             INSERT INTO tasks
                 (pillar_id, milestone_id, title, description, status,
-                 is_urgent, is_important, estimated_duration_min, timer_mode,
+                 is_impact, is_effort,
                  due_date, note_ref, sort_order, created_at)
-            VALUES (?, ?, ?, ?, 'todo', ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, 'todo', ?, ?, ?, ?, ?, ?)
             """,
             (
                 pillar_id, milestone, title, description,
-                int(bool(is_urgent)), int(bool(is_important)),
-                estimated_duration_min, timer_mode, due_date, note_ref, nxt, now,
+                int(bool(is_impact)), int(bool(is_effort)),
+                due_date, note_ref, nxt, now,
             ),
         )
     return _get_raw(conn, cur.lastrowid)
@@ -71,8 +67,8 @@ def create_task(
 # Fields update_task may set. Note: status is deliberately excluded.
 _UPDATABLE = {
     "title", "description", "milestone_id", "pillar_id",
-    "is_urgent", "is_important", "estimated_duration_min",
-    "timer_mode", "due_date", "note_ref", "sort_order",
+    "is_impact", "is_effort",
+    "due_date", "note_ref", "sort_order",
 }
 
 
@@ -86,27 +82,19 @@ def update_task(conn: sqlite3.Connection, id: int, **fields) -> dict:
     if unknown:
         raise ValidationError(f"cannot update task field(s): {', '.join(sorted(unknown))}")
 
-    # Re-validate the invariant whenever pillar or milestone is touched. Only an
-    # *explicitly passed* pillar is treated as a constraint; a milestone-only
-    # move adopts the milestone's pillar (rather than conflicting with the old
-    # one). If neither is explicit, fall back to the task's current pillar.
+    # Milestones are pillar-agnostic — a milestone-only move keeps the task's
+    # current pillar; only an explicitly passed pillar_id changes it. Either
+    # way, re-resolve so a moved-to milestone is validated to exist.
     if "pillar_id" in fields or "milestone_id" in fields:
-        explicit_pillar = fields.get("pillar_id", None)
+        explicit_pillar = fields.get("pillar_id", current["pillar_id"])
         new_milestone = fields.get("milestone_id", current["milestone_id"])
-        if explicit_pillar is None and new_milestone is None:
-            constraint_pillar = current["pillar_id"]
-        else:
-            constraint_pillar = explicit_pillar
         fields["pillar_id"] = resolve_task_pillar(
-            conn, pillar=constraint_pillar, milestone_id=new_milestone
+            conn, pillar=explicit_pillar, milestone_id=new_milestone
         )
-
-    if "timer_mode" in fields and fields["timer_mode"] is not None:
-        check_enum(fields["timer_mode"], TIMER_MODES, "timer_mode")
 
     sets, params = [], []
     for k, v in fields.items():
-        if k in ("is_urgent", "is_important"):
+        if k in ("is_impact", "is_effort"):
             v = int(bool(v))
         sets.append(f"{k} = ?")
         params.append(v)
@@ -152,9 +140,9 @@ def list_tasks(
         where.append("status = ?")
         params.append(check_enum(status, TASK_STATUSES, "status"))
     if quadrant is not None:
-        u, i = quadrant_to_flags(quadrant)
-        where.append("is_urgent = ? AND is_important = ?")
-        params += [u, i]
+        imp, eff = quadrant_to_flags(quadrant)
+        where.append("is_impact = ? AND is_effort = ?")
+        params += [imp, eff]
     if due_before is not None:
         where.append("due_date IS NOT NULL AND due_date < ?")
         params.append(due_before)
@@ -163,6 +151,60 @@ def list_tasks(
     if limit is not None:
         sql += " LIMIT ?"
         params.append(limit)
+    return rows_to_dicts(conn.execute(sql, params).fetchall())
+
+
+def list_archived_tasks(
+    conn: sqlite3.Connection,
+    pillar: int | str | None = None,
+    completed_from: str | None = None,
+    completed_to: str | None = None,
+) -> list[dict]:
+    """Full task log with display metadata and logged duration, any status."""
+    from .validation import require_pillar
+
+    where = []
+    params = []
+    if pillar is not None:
+        where.append("t.pillar_id = ?")
+        params.append(require_pillar(conn, pillar)["id"])
+    if completed_from is not None:
+        where.append("t.completed_at IS NOT NULL AND t.completed_at >= ?")
+        params.append(completed_from)
+    if completed_to is not None:
+        where.append("t.completed_at IS NOT NULL AND t.completed_at <= ?")
+        params.append(completed_to)
+
+    clause = ("WHERE " + " AND ".join(where)) if where else ""
+    sql = f"""
+        SELECT
+            t.id,
+            t.pillar_id,
+            p.slug AS pillar_slug,
+            p.name AS pillar_name,
+            p.color AS pillar_color,
+            t.milestone_id,
+            m.title AS milestone_title,
+            t.title,
+            t.description,
+            t.status,
+            t.is_impact,
+            t.is_effort,
+            COALESCE(SUM(CASE WHEN s.voided = 0 THEN s.duration_min ELSE 0 END), 0)
+                AS actual_duration_min,
+            t.due_date,
+            t.note_ref,
+            t.sort_order,
+            t.created_at,
+            t.completed_at
+        FROM tasks t
+        JOIN pillars p ON p.id = t.pillar_id
+        LEFT JOIN milestones m ON m.id = t.milestone_id
+        LEFT JOIN sessions s ON s.task_id = t.id
+        {clause}
+        GROUP BY t.id
+        ORDER BY t.completed_at DESC, t.id DESC
+    """
     return rows_to_dicts(conn.execute(sql, params).fetchall())
 
 
